@@ -1,73 +1,72 @@
+<div align="center">
+
+<img src="public/logo.svg" alt="Cortex" width="80" />
+
 # Cortex
 
-An AI-powered knowledge base application built on the MERN stack. Organize, search, and retrieve documents across connected sources with intelligent folder hierarchies and semantic search.
+**An AI-powered knowledge base that connects your tools, organizes your knowledge, and makes everything searchable.**
+
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
+
+</div>
+
+---
+
+## What is Cortex?
+
+Cortex is a modern knowledge management platform designed for teams that work across multiple tools. It aggregates documents from **Notion**, **Google Drive**, **Slack**, **Figma**, and more into a single, searchable workspace — powered by AI to surface exactly what you need, when you need it.
+
+## Key Features
+
+- **Unified Knowledge Hub** — Connect your favorite tools and bring all your documents into one place
+- **AI-Powered Search** — Semantic search that understands context, not just keywords
+- **Smart Organization** — Hierarchical folders, tags, and auto-categorization keep everything structured
+- **Multi-Source Integrations** — Native support for Notion, Google Drive, Slack, Figma, and more
+- **Team Collaboration** — See who added what, track changes, and stay in sync
+- **Dark Mode UI** — Clean, minimal interface designed for focus
 
 ## Tech Stack
 
-- **Frontend:** React 19, Tailwind CSS 4, Vite 8
-- **Backend:** Node.js, Express *(planned)*
-- **Database:** MongoDB *(planned)*
-- **AI:** Semantic search and tagging *(planned)*
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React, Tailwind CSS, Vite |
+| Backend | Node.js, Express |
+| Database | MongoDB |
+| AI/ML | Embeddings, Vector Search |
 
 ## Getting Started
 
 ```bash
-# Clone the repo
-git clone https://github.com/your-username/cortex.git
+git clone https://github.com/Saif-jaber/Cortex.git
 cd cortex
-
-# Install dependencies
 npm install
-
-# Start dev server
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`.
+## Screenshots
 
-## Scripts
+> Dashboard UI — dark mode, responsive layout with sidebar navigation, folder management, and file browser.
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run oxlint |
+## Roadmap
 
-## Project Structure
+- [ ] Backend API with authentication
+- [ ] MongoDB integration
+- [ ] AI-powered document indexing and search
+- [ ] OAuth for third-party integrations
+- [ ] Real-time collaboration
+- [ ] Mobile-responsive design
 
-```
-cortex/
-├── public/
-│   ├── favicon.svg
-│   ├── icons.svg
-│   └── logo.svg
-├── src/
-│   ├── components/
-│   │   └── Dashboard.jsx
-│   ├── App.jsx
-│   ├── index.css
-│   └── main.jsx
-├── index.html
-├── package.json
-└── vite.config.js
-```
+## Contact
 
-## Features
+**Saif Jaber** — [GitHub](https://github.com/Saif-jaber)
 
-- Dark mode dashboard UI
-- Sidebar navigation with folder tree
-- Hierarchical folder organization with expand/collapse
-- Folder cards with multi-source integration badges (Notion, Google Drive, Slack, Figma)
-- File table with type icons, sizes, dates, and contributor avatars
-- Breadcrumb navigation with dropdown folder selector
-- Search with keyboard shortcut hint
-- Responsive layout
+---
 
-## Status
+<div align="center">
 
-Currently in active development. The frontend UI is built; backend, database, and AI features are planned.
+Built with passion for better knowledge management.
 
-## License
-
-MIT
+</div>
