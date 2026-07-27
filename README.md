@@ -17,16 +17,16 @@
 
 ## What is Cortex?
 
-Cortex is a modern knowledge management platform designed for teams that work across multiple tools. It aggregates documents from **Notion**, **Google Drive**, **Slack**, **Figma**, and more into a single, searchable workspace — powered by AI to surface exactly what you need, when you need it.
+Cortex is a modern knowledge management platform built for teams that work across multiple tools. It brings documents from **Notion**, **Google Drive**, **Slack**, **Figma**, and more into a single, searchable workspace, powered by AI to surface exactly what you need, when you need it.
 
 ## Key Features
 
-- **Unified Knowledge Hub** — Connect your favorite tools and bring all your documents into one place
-- **AI-Powered Search** — Semantic search that understands context, not just keywords
-- **Smart Organization** — Hierarchical folders, tags, and auto-categorization keep everything structured
-- **Multi-Source Integrations** — Native support for Notion, Google Drive, Slack, Figma, and more
-- **Team Collaboration** — See who added what, track changes, and stay in sync
-- **Dark Mode UI** — Clean, minimal interface designed for focus
+- **Unified Knowledge Hub** | Connect your favorite tools and bring all your documents into one place
+- **AI-Powered Search** | Semantic search that understands context, not just keywords
+- **Smart Organization** | Hierarchical folders, tags, and auto-categorization keep everything structured
+- **Multi-Source Integrations** | Native support for Notion, Google Drive, Slack, Figma, and more
+- **Team Collaboration** | See who added what, track changes, and stay in sync
+- **Dark Mode UI** | Clean, minimal interface designed for focus
 
 ## Tech Stack
 
@@ -48,7 +48,7 @@ npm run dev
 
 ## Screenshots
 
-> Dashboard UI — dark mode, responsive layout with sidebar navigation, folder management, and file browser.
+> Dashboard UI featuring dark mode, responsive layout with sidebar navigation, folder management, and file browser.
 
 ## Roadmap
 
@@ -61,7 +61,7 @@ npm run dev
 
 ## Contact
 
-**Saif Jaber** — [GitHub](https://github.com/Saif-jaber)
+**Saif Jaber** | [GitHub](https://github.com/Saif-jaber)
 
 ---
 
