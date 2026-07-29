@@ -3,7 +3,7 @@ import { useState } from "react";
 const NAV_ITEMS = [
   { id: "home", label: "Home", icon: HomeIcon },
   { id: "knowledge", label: "Knowledge Base", icon: DatabaseIcon },
-  { id: "sync", label: "Sync", icon: SyncIcon },
+  { id: "chat", label: "AI Chat", icon: ChatIcon },
   { id: "analytics", label: "Analytics", icon: AnalyticsIcon },
 ];
 
@@ -30,16 +30,16 @@ const FOLDER_TREE = [
   { id: "interviews", name: "Team Interviews", count: null },
 ];
 
-const FOLDER_CARDS = [
-  { id: 1, name: "General Knowledge", files: 10, icons: ["notion", "gdrive", "word"], updated: "2h ago", peek: "pdf", tint: "from-indigo-500/8" },
-  { id: 2, name: "Onboarding", files: 3, icons: ["notion", "pdf"], updated: "5h ago", peek: "doc", tint: "from-emerald-500/8" },
-  { id: 3, name: "Integrations", files: 7, icons: ["gdrive", "slack"], updated: "1d ago", peek: null, tint: "from-amber-500/8" },
-  { id: 4, name: "Documents", files: 15, icons: ["word", "pdf", "gdrive"], updated: "3h ago", peek: "pdf", tint: "from-sky-500/8" },
-  { id: 5, name: "Onboarding Design", files: 8, icons: ["figma", "notion"], updated: "6h ago", peek: "figma", tint: "from-pink-500/8" },
-  { id: 6, name: "Team Interviews", files: 4, icons: ["pdf", "word"], updated: "2d ago", peek: null, tint: "from-violet-500/8" },
+const DEFAULT_FOLDER_CARDS = [
+  { id: 1, name: "General Knowledge", files: 10, updated: "2h ago", peek: "pdf", tint: "from-indigo-500/8" },
+  { id: 2, name: "Onboarding", files: 3, updated: "5h ago", peek: "doc", tint: "from-emerald-500/8" },
+  { id: 3, name: "Integrations", files: 7, updated: "1d ago", peek: null, tint: "from-amber-500/8" },
+  { id: 4, name: "Documents", files: 15, updated: "3h ago", peek: "pdf", tint: "from-sky-500/8" },
+  { id: 5, name: "Onboarding Design", files: 8, updated: "6h ago", peek: "figma", tint: "from-pink-500/8" },
+  { id: 6, name: "Team Interviews", files: 4, updated: "2d ago", peek: null, tint: "from-violet-500/8" },
 ];
 
-const FILES = [
+const DEFAULT_FILES = [
   { id: 1, name: "product-spec.pdf", type: "pdf", size: "2.4 MB", date: "Jul 25", addedBy: { name: "Sarah Chen", email: "sarah@cortex.io", gradient: "from-blue-500 to-cyan-400" } },
   { id: 2, name: "onboarding-guide.docx", type: "word", size: "1.1 MB", date: "Jul 24", addedBy: { name: "James Wilson", email: "james@cortex.io", gradient: "from-emerald-500 to-teal-400" } },
   { id: 3, name: "api-integration.md", type: "markdown", size: "340 KB", date: "Jul 23", addedBy: { name: "Alex Rivera", email: "alex@cortex.io", gradient: "from-violet-500 to-purple-400" } },
@@ -66,6 +66,11 @@ export default function Dashboard() {
   const [selectedFolder, setSelectedFolder] = useState("general");
   const [searchQuery, setSearchQuery] = useState("");
   const [breadcrumbOpen, setBreadcrumbOpen] = useState(false);
+  const [messages, setMessages] = useState([{ role: "bot", text: "Hi! I'm Cortex AI. How can I help you today?" }]);
+  const [chatInput, setChatInput] = useState("");
+  const [showPopup, setShowPopup] = useState(null);
+  const [folderCards, setFolderCards] = useState(DEFAULT_FOLDER_CARDS);
+  const [files, setFiles] = useState(DEFAULT_FILES);
 
   const toggleFolder = (id) => {
     setExpandedFolders((prev) => {
@@ -80,7 +85,7 @@ export default function Dashboard() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#0a0e1a] font-sans text-slate-100">
       {/* Left Icon Rail */}
-      <aside className="relative flex w-16 shrink-0 flex-col items-center border-r border-white/[0.06] bg-[#0d1220] py-5">
+      <aside className="relative flex w-14 sm:w-16 shrink-0 flex-col items-center border-r border-white/[0.06] bg-[#0d1220] py-5">
         <div className="mb-8 flex h-10 w-10 items-center justify-center">
           <img src="/logo.svg" alt="Cortex" className="h-7 w-7" />
         </div>
@@ -140,15 +145,15 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex flex-1 flex-col overflow-y-auto bg-[#0f1525] scroll-smooth">
+      <main className={`flex flex-1 flex-col bg-[#0f1525] ${activeNav === "chat" ? "overflow-hidden" : "overflow-y-auto scroll-smooth"}`}>
         {/* Top Bar */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] bg-[#0f1525]/80 backdrop-blur-xl px-6 py-3">
-          <div className="relative">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] bg-[#0f1525]/80 backdrop-blur-xl px-4 sm:px-6 py-3">
+          <div className="relative min-w-0">
             <button onClick={() => setBreadcrumbOpen(!breadcrumbOpen)}
               className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-200 transition-all duration-150 hover:bg-white/[0.06]">
-              <FolderSmallIcon className="h-4 w-4 text-slate-500" />
-              {selectedFolderName}
-              <ChevronDownIcon className={`h-3.5 w-3.5 text-slate-500 transition-transform duration-200 ${breadcrumbOpen ? "rotate-180" : ""}`} />
+              <FolderSmallIcon className="h-4 w-4 shrink-0 text-slate-500" />
+              <span className="truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">{selectedFolderName}</span>
+              <ChevronDownIcon className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform duration-200 ${breadcrumbOpen ? "rotate-180" : ""}`} />
             </button>
             {breadcrumbOpen && (
               <>
@@ -157,7 +162,7 @@ export default function Dashboard() {
                   <div className="px-3 pb-2">
                     <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Folders</span>
                   </div>
-                  {FOLDER_CARDS.map((f) => {
+                  {folderCards.map((f) => {
                     const isSel = selectedFolder === f.id;
                     return (
                       <button key={f.id} onClick={() => setBreadcrumbOpen(false)}
@@ -188,51 +193,62 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="flex-1 px-6 py-6">
-          {/* Folders Section */}
-          <section className="mb-8">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-slate-100">Folders</h3>
-            </div>
-            <div className="flex gap-4 overflow-x-auto pb-2 pr-6 scrollbar-hide">
-              {FOLDER_CARDS.map((folder) => (
-                <FolderCard key={folder.id} folder={folder} />
-              ))}
-            </div>
-          </section>
-
-          {/* Files Section */}
-          <section>
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-slate-100">Files</h3>
-            </div>
-            <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#131b2e]">
-              <div className="grid grid-cols-[1fr_auto_auto_auto] items-center border-b border-white/[0.06] px-5 py-3">
-                <span className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Name</span>
-                <span className="w-24 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Size</span>
-                <span className="w-20 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Date</span>
-                <span className="w-44 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Added By</span>
+        {activeNav === "chat" ? (
+          <ChatPage messages={messages} setMessages={setMessages} chatInput={chatInput} setChatInput={setChatInput} />
+        ) : (
+          <div className="flex-1 px-4 sm:px-6 py-6">
+            {/* Folders Section */}
+            <section className="mb-8">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-slate-100">Folders</h3>
+                <button onClick={() => setShowPopup("folder")} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+                  <PlusIcon className="h-3.5 w-3.5" /> Add
+                </button>
               </div>
-              {FILES.map((file, i) => (
-                <div key={file.id}
-                  className={`group grid grid-cols-[1fr_auto_auto_auto] items-center px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03] ${i < FILES.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
-                  <div className="flex items-center gap-3">
-                    <FileTypeIcon type={file.type} />
-                    <span className="text-sm font-medium text-slate-200 group-hover:text-slate-100 transition-colors">{file.name}</span>
-                  </div>
-                  <span className="w-24 text-right text-xs text-slate-500">{file.size}</span>
-                  <span className="w-20 text-right text-xs text-slate-500">{file.date}</span>
-                  <div className="flex w-44 items-center justify-end gap-2.5">
-                    <div className={`flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br ${file.addedBy.gradient} text-[9px] font-bold text-white shadow-sm`}>
-                      {file.addedBy.name.split(" ").map((n) => n[0]).join("")}
-                    </div>
-                    <span className="text-xs text-slate-400">{file.addedBy.email}</span>
-                  </div>
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                {folderCards.map((folder) => (
+                  <FolderCard key={folder.id} folder={folder} />
+                ))}
+              </div>
+            </section>
+
+            {/* Files Section */}
+            <section>
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-slate-100">Files</h3>
+                <button onClick={() => setShowPopup("file")} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+                  <PlusIcon className="h-3.5 w-3.5" /> Add
+                </button>
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-white/[0.06] bg-[#131b2e]">
+                <div className="grid grid-cols-[1fr_auto_auto_auto] items-center border-b border-white/[0.06] px-5 py-3">
+                  <span className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Name</span>
+                  <span className="w-24 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Size</span>
+                  <span className="w-20 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Date</span>
+                  <span className="w-28 sm:w-44 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Added By</span>
                 </div>
-              ))}
-            </div>
-          </section>
-        </div>
+                {files.map((file, i) => (
+                  <div key={file.id}
+                    className={`group grid grid-cols-[1fr_auto_auto_auto] items-center px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03] ${i < files.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FileTypeIcon type={file.type} />
+                      <span className="truncate text-sm font-medium text-slate-200 group-hover:text-slate-100 transition-colors">{file.name}</span>
+                    </div>
+                    <span className="w-24 text-right text-xs text-slate-500">{file.size}</span>
+                    <span className="w-20 text-right text-xs text-slate-500">{file.date}</span>
+                    <div className="flex w-28 sm:w-44 items-center justify-end gap-2.5">
+                      <div className={`flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br ${file.addedBy.gradient} text-[9px] font-bold text-white shadow-sm`}>
+                        {file.addedBy.name.split(" ").map((n) => n[0]).join("")}
+                      </div>
+                      <span className="hidden sm:block text-xs text-slate-400">{file.addedBy.email}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
+        {showPopup && <Popup type={showPopup} onClose={() => setShowPopup(null)} onAddFolder={(name) => setFolderCards((prev) => [...prev, { id: Date.now(), name, files: 0, updated: "just now", peek: null, tint: "from-indigo-500/8" }])} onAddFile={(file) => setFiles((prev) => [...prev, { id: Date.now(), name: file.name, type: file.name.split(".").pop().toLowerCase(), size: (file.size / 1024).toFixed(1) + " KB", date: "just now", addedBy: { name: "Sarah Chen", email: "sarah@cortex.io", gradient: "from-blue-500 to-cyan-400" } }])} />}
       </main>
     </div>
   );
@@ -303,33 +319,11 @@ function FolderCard({ folder }) {
           </div>
         )}
         <FolderLargeIcon className="h-[50px] w-[50px]" />
-        <div className="absolute -bottom-1 -left-2 flex -space-x-1.5">
-          {folder.icons.slice(0, 3).map((icon, i) => (
-            <AppBadge key={i} type={icon} />
-          ))}
-        </div>
       </div>
       <span className="text-[13px] font-medium text-slate-200">{folder.name}</span>
       <span className="mt-0.5 text-[11px] text-slate-500">{folder.files} Files</span>
       <span className="mt-1 text-[10px] text-slate-600">{folder.updated}</span>
     </button>
-  );
-}
-
-function AppBadge({ type }) {
-  const config = {
-    notion: { bg: "bg-slate-100", color: "text-slate-800", label: "N" },
-    gdrive: { bg: "bg-slate-100", color: "text-slate-700", label: "G" },
-    word: { bg: "bg-blue-100", color: "text-blue-700", label: "W" },
-    pdf: { bg: "bg-red-100", color: "text-red-600", label: "P" },
-    slack: { bg: "bg-purple-100", color: "text-purple-600", label: "S" },
-    figma: { bg: "bg-pink-100", color: "text-pink-600", label: "F" },
-  };
-  const c = config[type] || config.notion;
-  return (
-    <div className={`flex h-5 w-5 items-center justify-center rounded-full border border-slate-600 text-[8px] font-bold shadow-sm ${c.bg} ${c.color}`}>
-      {c.label}
-    </div>
   );
 }
 
@@ -373,13 +367,12 @@ function DatabaseIcon({ className, strokeWidth }) {
   );
 }
 
-function SyncIcon({ className, strokeWidth }) {
+function ChatIcon({ className, strokeWidth }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="17 1 21 5 17 9" />
-      <path d="M3 11V9a4 4 0 014-4h14" />
-      <polyline points="7 23 3 19 7 15" />
-      <path d="M21 13v2a4 4 0 01-4 4H3" />
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
+      <line x1="8" y1="9" x2="16" y2="9" />
+      <line x1="8" y1="13" x2="14" y2="13" />
     </svg>
   );
 }
@@ -528,4 +521,117 @@ function FileTypeSVG({ type, className }) {
     ),
   };
   return icons[type] || icons.pdf;
+}
+
+function Popup({ type, onClose, onAddFolder, onAddFile }) {
+  const [name, setName] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  const handleSubmit = () => {
+    if (type === "folder") {
+      if (!name.trim()) return;
+      onAddFolder(name.trim());
+      onClose();
+    } else {
+      if (!selectedFile) return;
+      onAddFile(selectedFile);
+      onClose();
+    }
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed left-1/2 top-1/2 z-40 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-white/[0.08] bg-[#182032] shadow-2xl shadow-black/40">
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+          <h3 className="text-sm font-semibold text-slate-200">{type === "folder" ? "New Folder" : "Upload File"}</h3>
+          <button onClick={onClose} className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div className="space-y-4 px-5 py-5">
+          {type === "folder" ? (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-slate-400">Folder Name</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="e.g. New Project" autoFocus
+                className="w-full rounded-lg bg-white/[0.04] px-3 py-2 text-sm text-slate-200 placeholder-slate-500 outline-none ring-1 ring-white/[0.06] transition-all duration-200 focus:ring-indigo-500/30" />
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-slate-400">Choose a file from your computer</label>
+              <div className="relative">
+                <input type="file" id="file-upload" onChange={(e) => setSelectedFile(e.target.files[0])} className="hidden" />
+                <label htmlFor="file-upload" className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-white/[0.08] bg-white/[0.02] px-4 py-8 transition-all duration-200 hover:border-indigo-500/30 hover:bg-white/[0.04]">
+                  <svg className="h-8 w-8 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span className="text-sm text-slate-400">{selectedFile ? selectedFile.name : "Click to browse files"}</span>
+                  {selectedFile && <span className="text-xs text-slate-500">{(selectedFile.size / 1024).toFixed(1)} KB</span>}
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
+          <button onClick={onClose} className="rounded-lg px-4 py-2 text-xs font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">Cancel</button>
+          <button onClick={handleSubmit} disabled={type === "folder" ? !name.trim() : !selectedFile} className="rounded-lg bg-indigo-500 px-4 py-2 text-xs font-medium text-white transition-all duration-150 hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed">
+            {type === "folder" ? "Create Folder" : "Upload File"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ChatPage({ messages, setMessages, chatInput, setChatInput }) {
+  const handleSend = () => {
+    if (!chatInput.trim()) return;
+    const userMsg = { role: "user", text: chatInput.trim() };
+    setMessages((prev) => [...prev, userMsg]);
+    setChatInput("");
+    setTimeout(() => {
+      setMessages((prev) => [...prev, { role: "bot", text: "Thanks for your message! I'm a demo AI assistant. In production, I'd connect to your knowledge base to answer your questions." }]);
+    }, 800);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div className="flex flex-1 flex-col min-h-0">
+      <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-6 space-y-4">
+        {messages.map((msg, i) => (
+          <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              msg.role === "user"
+                ? "bg-indigo-500/20 text-slate-100 border border-indigo-500/20"
+                : "bg-[#1a2540] text-slate-200 border border-white/[0.06]"
+            }`}>
+              {msg.text}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="border-t border-white/[0.06] px-4 sm:px-6 py-4">
+        <div className="flex items-center gap-3 rounded-xl bg-[#1a2540] px-4 py-3 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:ring-indigo-500/30">
+          <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={handleKeyDown}
+            placeholder="Ask Cortex AI anything..."
+            className="flex-1 bg-transparent text-sm text-slate-200 placeholder-slate-500 outline-none" />
+          <button onClick={handleSend} disabled={!chatInput.trim()}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500 text-white transition-all duration-150 hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
