@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const NAV_ITEMS = [
-  { id: "home", label: "Home", icon: HomeIcon },
-  { id: "knowledge", label: "Knowledge Base", icon: DatabaseIcon },
-  { id: "chat", label: "AI Chat", icon: ChatIcon },
-  { id: "analytics", label: "Analytics", icon: AnalyticsIcon },
+  { id: "home", label: "Home", mobile: "Home", icon: HomeIcon },
+  { id: "knowledge", label: "Knowledge Base", mobile: "Knowledge", icon: DatabaseIcon },
+  { id: "chat", label: "AI Chat", mobile: "Chat", icon: ChatIcon },
+  { id: "analytics", label: "Analytics", mobile: "Analytics", icon: AnalyticsIcon },
 ];
 
 const FOLDER_TREE = [
@@ -59,13 +59,14 @@ function findFolderName(tree, id) {
   return null;
 }
 
-export default function Dashboard() {
+export default function Dashboard({ onExitHome }) {
   const [activeNav, setActiveNav] = useState("knowledge");
   const [activeTab, setActiveTab] = useState("folders");
   const [expandedFolders, setExpandedFolders] = useState(new Set(["general"]));
   const [selectedFolder, setSelectedFolder] = useState("general");
   const [searchQuery, setSearchQuery] = useState("");
   const [breadcrumbOpen, setBreadcrumbOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [messages, setMessages] = useState([{ role: "bot", text: "Hi! I'm Cortex AI. How can I help you today?" }]);
   const [chatInput, setChatInput] = useState("");
   const [showPopup, setShowPopup] = useState(null);
@@ -80,14 +81,34 @@ export default function Dashboard() {
     });
   };
 
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setSidebarOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sidebarOpen]);
+
+  const handleSelectFolder = (id) => {
+    setSelectedFolder(id);
+    setSidebarOpen(false);
+  };
+
   const selectedFolderName = findFolderName(FOLDER_TREE, selectedFolder) || "General Knowledge";
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#0a0e1a] font-sans text-slate-100">
       {/* Left Icon Rail */}
-      <aside className="relative flex w-14 sm:w-16 shrink-0 flex-col items-center border-r border-white/[0.06] bg-[#0d1220] py-5">
+      <aside className="relative hidden w-14 shrink-0 flex-col items-center border-r border-white/[0.06] bg-[#0d1220] py-5 md:flex sm:w-16">
         <div className="mb-8 flex h-10 w-10 items-center justify-center">
-          <img src="/logo.svg" alt="Cortex" className="h-7 w-7" />
+          {onExitHome ? (
+            <button onClick={onExitHome} aria-label="Back to home" title="Back to home" className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors hover:bg-white/[0.06]">
+              <img src="/logo.svg" alt="Cortex" className="h-7 w-7" />
+            </button>
+          ) : (
+            <img src="/logo.svg" alt="Cortex" className="h-7 w-7" />
+          )}
         </div>
         <nav className="flex flex-1 flex-col items-center gap-1.5">          {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -105,54 +126,32 @@ export default function Dashboard() {
 
       {/* Second Sidebar */}
       <aside className="hidden w-[280px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0d1220] lg:flex">
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <h2 className="text-sm font-semibold text-slate-200">Knowledge Base</h2>
-          <div className="flex items-center gap-0.5">
-            <button aria-label="Create new" className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
-              <PlusIcon className="h-4 w-4" />
-            </button>
-            <button aria-label="Toggle layout" className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
-              <GridIcon className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        <div className="px-4 pb-3">
-          <div className="flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:bg-white/[0.06] focus-within:ring-indigo-500/30">
-            <SearchIcon className="h-4 w-4 shrink-0 text-slate-500" />
-            <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 outline-none" />
-            <kbd className="hidden shrink-0 select-none items-center gap-0.5 rounded-md border border-white/[0.08] bg-white/[0.04] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 sm:flex">
-              <span className="text-[11px]">&#x2318;</span>K
-            </kbd>
-          </div>
-        </div>
-
-        <div className="flex gap-1 px-4 pb-3">
-          {["Folders", "Tags"].map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab.toLowerCase())}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${activeTab === tab.toLowerCase() ? "bg-white/[0.08] text-slate-100 shadow-sm ring-1 ring-white/[0.08]" : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-300"}`}>
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-3 pb-4">
-          {FOLDER_TREE.map((folder) => (
-            <FolderTreeNode key={folder.id} folder={folder} depth={0} expandedFolders={expandedFolders} selectedFolder={selectedFolder} onToggle={toggleFolder} onSelect={setSelectedFolder} />
-          ))}
-        </div>
+        <SidebarPanel
+          closeButton={null}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          expandedFolders={expandedFolders}
+          selectedFolder={selectedFolder}
+          onToggle={toggleFolder}
+          onSelect={handleSelectFolder}
+        />
       </aside>
 
       {/* Main Content */}
       <main className={`flex flex-1 flex-col bg-[#0f1525] ${activeNav === "chat" ? "overflow-hidden" : "overflow-y-auto scroll-smooth"}`}>
         {/* Top Bar */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] bg-[#0f1525]/80 backdrop-blur-xl px-4 sm:px-6 py-3">
-          <div className="relative min-w-0">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] bg-[#0f1525]/80 backdrop-blur-xl px-2 sm:px-6 py-3">
+          <div className="relative flex min-w-0 items-center gap-1">
+            <button onClick={() => setSidebarOpen(true)} aria-label="Open navigation" aria-expanded={sidebarOpen}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200 lg:hidden">
+              <MenuIcon className="h-4.5 w-4.5" />
+            </button>
             <button onClick={() => setBreadcrumbOpen(!breadcrumbOpen)}
-              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-200 transition-all duration-150 hover:bg-white/[0.06]">
+              className="flex items-center gap-2 rounded-lg px-2 sm:px-3 py-1.5 text-sm font-medium text-slate-200 transition-all duration-150 hover:bg-white/[0.06]">
               <FolderSmallIcon className="h-4 w-4 shrink-0 text-slate-500" />
-              <span className="truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">{selectedFolderName}</span>
+              <span className="truncate max-w-[90px] sm:max-w-[200px] md:max-w-none">{selectedFolderName}</span>
               <ChevronDownIcon className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform duration-200 ${breadcrumbOpen ? "rotate-180" : ""}`} />
             </button>
             {breadcrumbOpen && (
@@ -182,10 +181,10 @@ export default function Dashboard() {
               <BellIcon className="h-4 w-4" />
               <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-indigo-400 ring-2 ring-[#0f1525]" />
             </button>
-            <button aria-label="Settings" className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+            <button aria-label="Settings" className="hidden h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200 sm:flex">
               <SettingsIcon className="h-4 w-4" />
             </button>
-            <div className="mx-1 h-5 w-px bg-white/[0.08]" />
+            <div className="mx-1 hidden h-5 w-px bg-white/[0.08] sm:block" />
             <button className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 transition-all duration-150 hover:bg-white/[0.06]">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-[11px] font-bold text-white shadow-lg shadow-indigo-500/20">SC</div>
               <span className="text-xs font-medium text-slate-300 hidden md:block">Sarah</span>
@@ -196,7 +195,7 @@ export default function Dashboard() {
         {activeNav === "chat" ? (
           <ChatPage messages={messages} setMessages={setMessages} chatInput={chatInput} setChatInput={setChatInput} />
         ) : (
-          <div className="flex-1 px-4 sm:px-6 py-6">
+          <div className="flex-1 px-4 sm:px-6 py-6 pb-24 md:pb-6">
             {/* Folders Section */}
             <section className="mb-8">
               <div className="mb-4 flex items-center justify-between">
@@ -205,7 +204,7 @@ export default function Dashboard() {
                   <PlusIcon className="h-3.5 w-3.5" /> Add
                 </button>
               </div>
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
                 {folderCards.map((folder) => (
                   <FolderCard key={folder.id} folder={folder} />
                 ))}
@@ -220,7 +219,23 @@ export default function Dashboard() {
                   <PlusIcon className="h-3.5 w-3.5" /> Add
                 </button>
               </div>
-              <div className="overflow-x-auto rounded-xl border border-white/[0.06] bg-[#131b2e]">
+
+              <div className="space-y-2 md:hidden">
+                {files.map((file) => (
+                  <div key={file.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#131b2e] px-3.5 py-3 transition-colors duration-150 hover:bg-[#182032]">
+                    <FileTypeIcon type={file.type} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-slate-200">{file.name}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">{file.size} · {file.date}</p>
+                    </div>
+                    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${file.addedBy.gradient} text-[9px] font-bold text-white shadow-sm`}>
+                      {file.addedBy.name.split(" ").map((n) => n[0]).join("")}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden overflow-x-auto rounded-xl border border-white/[0.06] bg-[#131b2e] md:block">
                 <div className="grid grid-cols-[1fr_auto_auto_auto] items-center border-b border-white/[0.06] px-5 py-3">
                   <span className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Name</span>
                   <span className="w-24 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Size</span>
@@ -250,7 +265,95 @@ export default function Dashboard() {
         )}
         {showPopup && <Popup type={showPopup} onClose={() => setShowPopup(null)} onAddFolder={(name) => setFolderCards((prev) => [...prev, { id: Date.now(), name, files: 0, updated: "just now", peek: null, tint: "from-indigo-500/8" }])} onAddFile={(file) => setFiles((prev) => [...prev, { id: Date.now(), name: file.name, type: file.name.split(".").pop().toLowerCase(), size: (file.size / 1024).toFixed(1) + " KB", date: "just now", addedBy: { name: "Sarah Chen", email: "sarah@cortex.io", gradient: "from-blue-500 to-cyan-400" } }])} />}
       </main>
+
+      {/* Mobile / Tablet Sidebar Drawer */}
+      <div className={`fixed inset-0 z-40 lg:hidden ${sidebarOpen ? "" : "pointer-events-none"}`}>
+        <div aria-hidden="true"
+          className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${sidebarOpen ? "opacity-100" : "opacity-0"}`}
+          onClick={() => setSidebarOpen(false)} />
+        <aside aria-label="Knowledge base navigation" aria-hidden={!sidebarOpen}
+          style={{ transition: "transform 300ms cubic-bezier(0.32, 0.72, 0.35, 1), visibility 300ms" }}
+          className={`absolute left-0 top-0 flex h-full w-[280px] max-w-[85vw] flex-col border-r border-white/[0.06] bg-[#0d1220] shadow-2xl shadow-black/50 ${sidebarOpen ? "visible translate-x-0" : "invisible -translate-x-full"}`}>
+          <SidebarPanel
+            closeButton={
+              <button onClick={() => setSidebarOpen(false)} aria-label="Close navigation"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+                <XIcon className="h-4 w-4" />
+              </button>
+            }
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            expandedFolders={expandedFolders}
+            selectedFolder={selectedFolder}
+            onToggle={toggleFolder}
+            onSelect={handleSelectFolder}
+          />
+        </aside>
+      </div>
+
+      {/* Mobile Bottom Tab Bar */}
+      <nav aria-label="Main navigation" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-white/[0.06] bg-[#0d1220]/90 backdrop-blur-xl md:hidden">
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeNav === item.id;
+          return (
+            <button key={item.id} onClick={() => setActiveNav(item.id)} aria-label={item.label}
+              className={`group flex flex-1 flex-col items-center gap-1 pt-2.5 pb-2 transition-colors duration-200 ${isActive ? "text-indigo-400" : "text-slate-500 hover:text-slate-300"}`}>
+              <Icon className="h-5 w-5" strokeWidth={1.8} />
+              <span className={`text-[10px] font-medium ${isActive ? "text-indigo-300" : "text-slate-500"}`}>{item.mobile}</span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
+  );
+}
+
+function SidebarPanel({ closeButton, activeTab, setActiveTab, searchQuery, setSearchQuery, expandedFolders, selectedFolder, onToggle, onSelect }) {
+  return (
+    <>
+      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <h2 className="text-sm font-semibold text-slate-200">Knowledge Base</h2>
+        <div className="flex items-center gap-0.5">
+          <button aria-label="Create new" className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+            <PlusIcon className="h-4 w-4" />
+          </button>
+          <button aria-label="Toggle layout" className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+            <GridIcon className="h-4 w-4" />
+          </button>
+          {closeButton}
+        </div>
+      </div>
+
+      <div className="px-4 pb-3">
+        <div className="flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:bg-white/[0.06] focus-within:ring-indigo-500/30">
+          <SearchIcon className="h-4 w-4 shrink-0 text-slate-500" />
+          <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 outline-none" />
+          <kbd className="hidden shrink-0 select-none items-center gap-0.5 rounded-md border border-white/[0.08] bg-white/[0.04] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 sm:flex">
+            <span className="text-[11px]">&#x2318;</span>K
+          </kbd>
+        </div>
+      </div>
+
+      <div className="flex gap-1 px-4 pb-3">
+        {["Folders", "Tags"].map((tab) => (
+          <button key={tab} onClick={() => setActiveTab(tab.toLowerCase())}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${activeTab === tab.toLowerCase() ? "bg-white/[0.08] text-slate-100 shadow-sm ring-1 ring-white/[0.08]" : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-300"}`}>
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-3 pb-4">
+        {FOLDER_TREE.map((folder) => (
+          <FolderTreeNode key={folder.id} folder={folder} depth={0} expandedFolders={expandedFolders} selectedFolder={selectedFolder} onToggle={onToggle} onSelect={onSelect} />
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -292,8 +395,8 @@ function FolderTreeNode({ folder, depth, expandedFolders, selectedFolder, onTogg
 
 function FolderCard({ folder }) {
   return (
-    <button className="group flex w-[174px] shrink-0 flex-col items-center rounded-xl border border-white/[0.06] bg-[#131b2e] p-5 transition-colors duration-150 hover:bg-[#182032]">
-      <div className="relative mb-4">
+    <button className="group flex w-full flex-col items-center rounded-xl border border-white/[0.06] bg-[#131b2e] p-4 transition-colors duration-150 hover:bg-[#182032] sm:p-5">
+      <div className="relative mb-3 sm:mb-4">
         {folder.peek === "pdf" && (
           <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a2540] shadow-md">
             <svg className="h-3.5 w-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -438,6 +541,25 @@ function ChevronDownIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
+function MenuIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
+}
+
+function XIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   );
 }
@@ -604,11 +726,11 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput }) {
   };
 
   return (
-    <div className="flex flex-1 flex-col min-h-0">
+    <div className="flex flex-1 flex-col min-h-0 pb-24 md:pb-0">
       <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-6 space-y-4">
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed sm:max-w-[70%] ${
               msg.role === "user"
                 ? "bg-indigo-500/20 text-slate-100 border border-indigo-500/20"
                 : "bg-[#1a2540] text-slate-200 border border-white/[0.06]"
