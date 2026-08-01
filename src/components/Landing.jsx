@@ -1,4 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import SignInModal from "./SignInModal";
+import SignUpModal from "./SignUpModal";
+import { ArrowRightIcon, GitHubIcon, XIcon } from "./icons";
 
 const NAV_LINKS = [
   { label: "Features", href: "#features" },
@@ -109,28 +112,51 @@ const PLAN_FEATURES = {
 
 export default function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [showSignUp, setShowSignUp] = useState(false);
+
+  const openSignIn = () => setShowSignIn(true);
+  const openSignUp = () => setShowSignUp(true);
 
   return (
     <div className="min-h-screen overflow-x-clip bg-[#0a0e1a] font-sans text-slate-300 antialiased">
-      <Nav menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
-      <Hero />
+      <Nav menuOpen={menuOpen} setMenuOpen={setMenuOpen} onSignIn={openSignIn} onSignUp={openSignUp} />
+      <Hero onSignUp={openSignUp} />
       <LogoCloud />
       <StatsBand />
       <Features />
-      <ProductShowcase />
+      <ProductShowcase onSignUp={openSignUp} />
       <HowItWorks />
       <Testimonials />
-      <Pricing />
+      <Pricing onSignUp={openSignUp} />
       <Faq />
-      <FinalCta />
+      <FinalCta onSignUp={openSignUp} />
       <Footer />
+      {showSignIn && (
+        <SignInModal
+          onClose={() => setShowSignIn(false)}
+          onSwitchToSignUp={() => {
+            setShowSignIn(false);
+            setShowSignUp(true);
+          }}
+        />
+      )}
+      {showSignUp && (
+        <SignUpModal
+          onClose={() => setShowSignUp(false)}
+          onSwitchToSignIn={() => {
+            setShowSignUp(false);
+            setShowSignIn(true);
+          }}
+        />
+      )}
     </div>
   );
 }
 
 /* ─── Navigation ─────────────────────────────────────────────── */
 
-function Nav({ menuOpen, setMenuOpen }) {
+function Nav({ menuOpen, setMenuOpen, onSignIn, onSignUp }) {
   return (
     <header className="fixed inset-x-0 top-4 z-50 px-4">
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-ink-900/75 py-2.5 pl-4 pr-2.5 shadow-2xl shadow-black/40 backdrop-blur-xl">
@@ -152,19 +178,21 @@ function Nav({ menuOpen, setMenuOpen }) {
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <a
-            href="#/app"
+          <button
+            type="button"
+            onClick={onSignIn}
             className="rounded-xl px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-slate-100"
           >
             Sign in
-          </a>
-          <a
-            href="#/app"
+          </button>
+          <button
+            type="button"
+            onClick={onSignUp}
             className="group flex items-center gap-1.5 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-400 hover:shadow-indigo-500/40"
           >
             Get started
             <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </a>
+          </button>
         </div>
 
         <button
@@ -191,20 +219,26 @@ function Nav({ menuOpen, setMenuOpen }) {
               </a>
             ))}
             <div className="mt-2 flex flex-col gap-2 border-t border-white/[0.08] pt-3">
-              <a
-                href="#/app"
-                onClick={() => setMenuOpen(false)}
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onSignIn();
+                }}
                 className="rounded-xl border border-white/[0.1] px-4 py-3 text-center text-sm font-medium text-slate-200 transition-colors hover:bg-white/[0.06]"
               >
                 Sign in
-              </a>
-              <a
-                href="#/app"
-                onClick={() => setMenuOpen(false)}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onSignUp();
+                }}
                 className="rounded-xl bg-indigo-500 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-indigo-400"
               >
                 Get started free
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -215,7 +249,7 @@ function Nav({ menuOpen, setMenuOpen }) {
 
 /* ─── Hero ───────────────────────────────────────────────────── */
 
-function Hero() {
+function Hero({ onSignUp }) {
   return (
     <section className="relative pt-40 pb-20 sm:pt-44 sm:pb-28">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
@@ -255,13 +289,14 @@ function Hero() {
 
           <Reveal delay={240}>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <a
-                href="#/app"
+              <button
+                type="button"
+                onClick={onSignUp}
                 className="group flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-7 py-3.5 text-base font-semibold text-white shadow-xl shadow-indigo-500/30 transition-all duration-200 hover:bg-indigo-400 hover:shadow-indigo-500/45 sm:w-auto"
               >
                 Launch the app
                 <ArrowRightIcon className="h-4.5 w-4.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </a>
+              </button>
               <a
                 href="#product"
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.04] px-7 py-3.5 text-base font-semibold text-slate-200 transition-colors duration-200 hover:bg-white/[0.08] sm:w-auto"
@@ -669,7 +704,7 @@ function SecurityVisual() {
 
 /* ─── Product showcase ───────────────────────────────────────── */
 
-function ProductShowcase() {
+function ProductShowcase({ onSignUp }) {
   return (
     <section id="product" className="scroll-mt-28 border-t border-white/[0.05] bg-ink-900/40 py-20 sm:py-28">
       <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20">
@@ -698,13 +733,14 @@ function ProductShowcase() {
                 </li>
               ))}
             </ul>
-            <a
-              href="#/app"
+            <button
+              type="button"
+              onClick={onSignUp}
               className="group mt-9 inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-400"
             >
               Open the app
               <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </a>
+            </button>
           </div>
         </Reveal>
 
@@ -857,7 +893,7 @@ function Testimonials() {
 
 /* ─── Pricing ────────────────────────────────────────────────── */
 
-function Pricing() {
+function Pricing({ onSignUp }) {
   const [annual, setAnnual] = useState(true);
 
   const plans = [
@@ -931,7 +967,7 @@ function Pricing() {
         <div className="mt-12 grid items-stretch gap-5 lg:grid-cols-3">
           {plans.map((plan, i) => (
             <Reveal key={plan.name} delay={i * 90} className="h-full">
-              <PricingCard plan={plan} />
+              <PricingCard plan={plan} onSignUp={onSignUp} />
             </Reveal>
           ))}
         </div>
@@ -940,7 +976,7 @@ function Pricing() {
   );
 }
 
-function PricingCard({ plan }) {
+function PricingCard({ plan, onSignUp }) {
   return (
     <div
       className={`relative flex h-full flex-col rounded-2xl p-7 transition-all duration-300 ${
@@ -971,16 +1007,17 @@ function PricingCard({ plan }) {
           </li>
         ))}
       </ul>
-      <a
-        href="#/app"
-        className={`mt-8 block rounded-xl py-3 text-center text-sm font-semibold transition-all duration-200 ${
+      <button
+        type="button"
+        onClick={onSignUp}
+        className={`mt-8 block w-full rounded-xl py-3 text-center text-sm font-semibold transition-all duration-200 ${
           plan.popular
             ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 hover:bg-indigo-400"
             : "border border-white/[0.1] bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]"
         }`}
       >
         {plan.cta}
-      </a>
+      </button>
     </div>
   );
 }
@@ -1034,7 +1071,7 @@ function Faq() {
 
 /* ─── Final CTA ──────────────────────────────────────────────── */
 
-function FinalCta() {
+function FinalCta({ onSignUp }) {
   return (
     <section className="py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -1054,13 +1091,14 @@ function FinalCta() {
                 Connect your tools today and let Cortex turn your knowledge into answers.
               </p>
               <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <a
-                  href="#/app"
+                <button
+                  type="button"
+                  onClick={onSignUp}
                   className="group flex w-full items-center justify-center gap-2 rounded-xl bg-white px-7 py-3.5 text-base font-semibold text-ink-900 transition-colors duration-200 hover:bg-slate-200 sm:w-auto"
                 >
                   Get started free
                   <ArrowRightIcon className="h-4.5 w-4.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-                </a>
+                </button>
                 <a
                   href="#pricing"
                   className="flex w-full items-center justify-center rounded-xl border border-white/[0.14] px-7 py-3.5 text-base font-semibold text-slate-200 transition-colors duration-200 hover:bg-white/[0.06] sm:w-auto"
@@ -1138,13 +1176,6 @@ function Footer() {
 
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/[0.05] pt-8 sm:flex-row">
           <p className="text-sm text-slate-600">© {new Date().getFullYear()} Cortex, Inc. All rights reserved.</p>
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-            </span>
-            All systems operational
-          </div>
         </div>
       </div>
     </footer>
@@ -1216,15 +1247,6 @@ function Svg({ children, className, sw = 1.7 }) {
     >
       {children}
     </svg>
-  );
-}
-
-function ArrowRightIcon({ className }) {
-  return (
-    <Svg className={className}>
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <polyline points="12 5 19 12 12 19" />
-    </Svg>
   );
 }
 
@@ -1321,15 +1343,6 @@ function CheckIcon({ className }) {
   );
 }
 
-function XIcon({ className }) {
-  return (
-    <Svg className={className}>
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </Svg>
-  );
-}
-
 function MenuIcon({ className }) {
   return (
     <Svg className={className}>
@@ -1373,14 +1386,6 @@ function FileGlyph({ className }) {
       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
       <polyline points="14 2 14 8 20 8" />
     </Svg>
-  );
-}
-
-function GitHubIcon({ className }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55 0-.27-.01-1.17-.02-2.12-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.7 1.25 3.35.96.1-.75.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 015.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.73.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .3.21.67.8.55A11.51 11.51 0 0023.5 12C23.5 5.65 18.35.5 12 .5z" />
-    </svg>
   );
 }
 
