@@ -1,16 +1,8 @@
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import { generateAccessToken } from "../utils/jwt.js";
 
 const SALT_ROUNDS = 10;
-
-function signToken(user) {
-  return jwt.sign(
-    { id: user._id, email: user.email },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
-}
 
 export async function signup(req, res) {
   try {
@@ -34,7 +26,7 @@ export async function signup(req, res) {
       password: hashed,
     });
 
-    const token = signToken(user);
+    const token = generateAccessToken(user);
 
     res.status(201).json({
       token,
@@ -64,7 +56,7 @@ export async function login(req, res) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    const token = signToken(user);
+    const token = generateAccessToken(user);
 
     res.json({
       token,

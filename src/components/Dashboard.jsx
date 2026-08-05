@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const NAV_ITEMS = [
   { id: "home", label: "Home", mobile: "Home", icon: HomeIcon },
@@ -48,6 +48,14 @@ const DEFAULT_FILES = [
   { id: 6, name: "q3-report.docx", type: "word", size: "1.8 MB", date: "Jul 20", addedBy: { name: "James Wilson", email: "james@cortex.io", gradient: "from-emerald-500 to-teal-400" } },
 ];
 
+const CHAT_HISTORY = [
+  { id: 1, title: "Onboarding flow improvements", snippet: "How should we structure the new user onboarding...", time: "2h ago" },
+  { id: 2, title: "Product spec questions", snippet: "What edge cases should the file uploader handle...", time: "5h ago" },
+  { id: 3, title: "API integration guide", snippet: "Can you summarize the auth middleware flow...", time: "1d ago" },
+  { id: 4, title: "Interview prep", snippet: "Generate 5 questions for a senior frontend role...", time: "2d ago" },
+  { id: 5, title: "Design system tokens", snippet: "Compare our spacing scale to Tailwind's default...", time: "3d ago" },
+];
+
 function findFolderName(tree, id) {
   for (const f of tree) {
     if (f.id === id) return f.name;
@@ -67,7 +75,7 @@ export default function Dashboard({ onExitHome }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [breadcrumbOpen, setBreadcrumbOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [messages, setMessages] = useState([{ role: "bot", text: "Hi! I'm Cortex AI. How can I help you today?" }]);
+  const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [showPopup, setShowPopup] = useState(null);
   const [folderCards, setFolderCards] = useState(DEFAULT_FOLDER_CARDS);
@@ -126,17 +134,21 @@ export default function Dashboard({ onExitHome }) {
 
       {/* Second Sidebar */}
       <aside className="hidden w-[280px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0d1220] lg:flex">
-        <SidebarPanel
-          closeButton={null}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          expandedFolders={expandedFolders}
-          selectedFolder={selectedFolder}
-          onToggle={toggleFolder}
-          onSelect={handleSelectFolder}
-        />
+        {activeNav === "chat" ? (
+          <ChatSidebarPanel closeButton={null} />
+        ) : (
+          <SidebarPanel
+            closeButton={null}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            expandedFolders={expandedFolders}
+            selectedFolder={selectedFolder}
+            onToggle={toggleFolder}
+            onSelect={handleSelectFolder}
+          />
+        )}
       </aside>
 
       {/* Main Content */}
@@ -274,22 +286,33 @@ export default function Dashboard({ onExitHome }) {
         <aside aria-label="Knowledge base navigation" aria-hidden={!sidebarOpen}
           style={{ transition: "transform 300ms cubic-bezier(0.32, 0.72, 0.35, 1), visibility 300ms" }}
           className={`absolute left-0 top-0 flex h-full w-[280px] max-w-[85vw] flex-col border-r border-white/[0.06] bg-[#0d1220] shadow-2xl shadow-black/50 ${sidebarOpen ? "visible translate-x-0" : "invisible -translate-x-full"}`}>
-          <SidebarPanel
-            closeButton={
-              <button onClick={() => setSidebarOpen(false)} aria-label="Close navigation"
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
-                <XIcon className="h-4 w-4" />
-              </button>
-            }
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            expandedFolders={expandedFolders}
-            selectedFolder={selectedFolder}
-            onToggle={toggleFolder}
-            onSelect={handleSelectFolder}
-          />
+          {activeNav === "chat" ? (
+            <ChatSidebarPanel
+              closeButton={
+                <button onClick={() => setSidebarOpen(false)} aria-label="Close navigation"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+                  <XIcon className="h-4 w-4" />
+                </button>
+              }
+            />
+          ) : (
+            <SidebarPanel
+              closeButton={
+                <button onClick={() => setSidebarOpen(false)} aria-label="Close navigation"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+                  <XIcon className="h-4 w-4" />
+                </button>
+              }
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              expandedFolders={expandedFolders}
+              selectedFolder={selectedFolder}
+              onToggle={toggleFolder}
+              onSelect={handleSelectFolder}
+            />
+          )}
         </aside>
       </div>
 
@@ -352,6 +375,58 @@ function SidebarPanel({ closeButton, activeTab, setActiveTab, searchQuery, setSe
         {FOLDER_TREE.map((folder) => (
           <FolderTreeNode key={folder.id} folder={folder} depth={0} expandedFolders={expandedFolders} selectedFolder={selectedFolder} onToggle={onToggle} onSelect={onSelect} />
         ))}
+      </div>
+    </>
+  );
+}
+
+function ChatSidebarPanel({ closeButton }) {
+  const [query, setQuery] = useState("");
+
+  const filtered = CHAT_HISTORY.filter(
+    (chat) =>
+      chat.title.toLowerCase().includes(query.toLowerCase()) ||
+      chat.snippet.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <>
+      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <h2 className="text-sm font-semibold text-slate-200">Chats</h2>
+        <div className="flex items-center gap-0.5">
+          <button aria-label="New chat" title="New chat" className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+            <PlusIcon className="h-4 w-4" />
+          </button>
+          {closeButton}
+        </div>
+      </div>
+
+      <div className="px-4 pb-3">
+        <div className="flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:bg-white/[0.06] focus-within:ring-indigo-500/30">
+          <SearchIcon className="h-4 w-4 shrink-0 text-slate-500" />
+          <input type="text" placeholder="Search chats..." value={query} onChange={(e) => setQuery(e.target.value)}
+            className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 outline-none" />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-3 pb-4">
+        <p className="px-2 pb-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Recent</p>
+        {filtered.length === 0 ? (
+          <p className="px-2 py-6 text-center text-xs text-slate-500">No chats found</p>
+        ) : (
+          filtered.map((chat) => (
+            <button key={chat.id} className="group flex w-full items-start gap-2.5 rounded-lg px-2 py-2.5 text-left transition-all duration-150 hover:bg-white/[0.04]">
+              <ChatIcon className="mt-0.5 h-4 w-4 shrink-0 text-slate-600 group-hover:text-slate-400" strokeWidth={1.8} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-[13px] font-medium text-slate-200 group-hover:text-slate-100">{chat.title}</span>
+                  <span className="shrink-0 text-[10px] text-slate-500">{chat.time}</span>
+                </div>
+                <p className="mt-0.5 truncate text-xs text-slate-500">{chat.snippet}</p>
+              </div>
+            </button>
+          ))
+        )}
       </div>
     </>
   );
@@ -430,26 +505,18 @@ function FolderCard({ folder }) {
   );
 }
 
-function FileTypeIcon({ type }) {
+function FileTypeIcon({ type, size = "md" }) {
+  const box = size === "sm" ? "h-5 w-5 rounded-md" : "h-8 w-8 rounded-lg";
+  const icon = size === "sm" ? "h-3 w-3" : "h-4 w-4";
   const colors = { pdf: "text-red-400", word: "text-blue-400", markdown: "text-slate-400", figma: "text-pink-400" };
   return (
-    <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.04] ${colors[type] || "text-slate-400"}`}>
-      <FileTypeSVG type={type} className="h-4 w-4" />
+    <div className={`flex ${box} shrink-0 items-center justify-center bg-white/[0.04] ${colors[type] || "text-slate-400"}`}>
+      <FileTypeSVG type={type} className={icon} />
     </div>
   );
 }
 
 /* ─── SVG Icons ──────────────────────────────────────────────── */
-
-function CortexLogo({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-      <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z" />
-      <path d="M12 2v6M12 16v6M2 12h6M16 12h6" strokeWidth="1.5" opacity="0.4" />
-    </svg>
-  );
-}
 
 function HomeIcon({ className, strokeWidth }) {
   return (
@@ -707,15 +774,196 @@ function Popup({ type, onClose, onAddFolder, onAddFile }) {
   );
 }
 
+const SUGGESTIONS = [
+  "Summarize my recent documents",
+  "What's inside the Onboarding folder?",
+  "Draft a weekly team update",
+  "Find files about integrations",
+];
+
+function formatTime(d) {
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function demoBotReply() {
+  return {
+    role: "bot",
+    time: formatTime(new Date()),
+    sources: [
+      { type: "word", name: "onboarding-guide.docx" },
+      { type: "pdf", name: "team-standup-notes.pdf" },
+    ],
+    text: "Good question! Here's what I found across your knowledge base:\n\n**Onboarding flow**\n- The current flow has 4 steps: account setup, profile, team invite, and product tour.\n- Users who skip the product tour are 32% less likely to activate within the first week.\n- Two documents reference your email drip cadence, worth aligning the copy.\n\nWant me to draft a revised onboarding sequence or summarize these files?",
+  };
+}
+
+function renderInline(text) {
+  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={i} className="font-semibold text-slate-100">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <code key={i} className="rounded-md bg-white/[0.07] px-1.5 py-0.5 font-mono text-[12.5px] text-indigo-300">
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return part;
+  });
+}
+
+function renderMessageText(text) {
+  return text.split("\n").map((line, i) => {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("- ")) {
+      return (
+        <div key={i} className="flex items-start gap-2.5 py-0.5">
+          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
+          <span>{renderInline(trimmed.slice(2))}</span>
+        </div>
+      );
+    }
+    if (!trimmed) return null;
+    return (
+      <p key={i} className={i > 0 ? "mt-2.5" : ""}>
+        {renderInline(trimmed)}
+      </p>
+    );
+  });
+}
+
+function BotAvatar() {
+  return (
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1a2540] ring-1 ring-white/[0.08]">
+      <img src="/logo.svg" alt="Cortex AI" className="h-5 w-5" />
+    </div>
+  );
+}
+
+function UserAvatar() {
+  return (
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1a2540] text-[11px] font-bold text-slate-300 ring-1 ring-white/[0.08]">
+      SC
+    </div>
+  );
+}
+
+function MessageAction({ label, children }) {
+  return (
+    <button aria-label={label} title={label}
+      className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+      {children}
+    </button>
+  );
+}
+
+function Message({ msg }) {
+  if (msg.role === "user") {
+    return (
+      <div className="flex items-end justify-end gap-3">
+        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-indigo-500/15 px-4 py-3 text-sm leading-relaxed text-slate-100 ring-1 ring-indigo-500/20 sm:max-w-[70%]">
+          {msg.text}
+        </div>
+        <UserAvatar />
+      </div>
+    );
+  }
+
+  return (
+    <div className="group flex items-start gap-3">
+      <BotAvatar />
+      <div className="min-w-0 flex-1">
+        <div className="mb-1.5 flex items-baseline gap-2 px-1">
+          <span className="text-[13px] font-semibold text-slate-100">Cortex AI</span>
+          <span className="text-[11px] text-slate-500">{msg.time}</span>
+        </div>
+        <div className="rounded-2xl rounded-tl-md bg-[#1a2540] px-4 py-3.5 text-sm leading-relaxed text-slate-300 ring-1 ring-white/[0.06]">
+          {renderMessageText(msg.text)}
+        </div>
+        {msg.sources?.length > 0 && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5 px-1">
+            <span className="mr-0.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Sources</span>
+            {msg.sources.map((s) => (
+              <button key={s.name} aria-label={`Open source ${s.name}`}
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] py-1 pl-1 pr-2 text-[11px] text-slate-400 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+                <FileTypeIcon type={s.type} size="sm" />
+                <span className="truncate">{s.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="mt-1.5 flex items-center gap-0.5 px-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
+          <MessageAction label="Copy response"><CopyIcon className="h-3.5 w-3.5" /></MessageAction>
+          <MessageAction label="Regenerate response"><RefreshIcon className="h-3.5 w-3.5" /></MessageAction>
+          <MessageAction label="Like response"><ThumbsUpIcon className="h-3.5 w-3.5" /></MessageAction>
+          <MessageAction label="Dislike response"><ThumbsDownIcon className="h-3.5 w-3.5" /></MessageAction>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TypingIndicator() {
+  return (
+    <div className="flex items-end gap-3" role="status" aria-label="Cortex AI is typing">
+      <BotAvatar />
+      <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-md bg-[#1a2540] px-4 py-3.5 ring-1 ring-white/[0.06]">
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 motion-reduce:animate-none"
+            style={{ animationDelay: `${i * 150}ms` }} />
+        ))}
+        <span className="sr-only">Cortex AI is typing</span>
+      </div>
+    </div>
+  );
+}
+
+function WelcomeState({ onPick }) {
+  return (
+    <div className="flex flex-col items-center px-2 pt-6 pb-4 text-center sm:pt-10">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1a2540] ring-1 ring-white/[0.08]">
+        <img src="/logo.svg" alt="Cortex AI" className="h-7 w-7" />
+      </div>
+      <h2 className="mt-4 text-lg font-semibold text-slate-100">Ask Cortex AI</h2>
+      <p className="mt-1 max-w-md text-sm text-slate-500">Answers grounded in your knowledge base. Search documents, summarize files, and draft content.</p>
+      <div className="mt-6 grid w-full max-w-lg gap-2 sm:grid-cols-2">
+        {SUGGESTIONS.map((s) => (
+          <button key={s} onClick={() => onPick(s)}
+            className="group flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-white/[0.06] bg-[#131b2e] px-3.5 py-2.5 text-left text-[13px] text-slate-300 transition-colors duration-150 hover:border-indigo-500/30 hover:bg-[#182032] hover:text-slate-100">
+            <span className="truncate">{s}</span>
+            <ArrowUpRightIcon className="h-3.5 w-3.5 shrink-0 text-slate-600 transition-colors duration-150 group-hover:text-indigo-400" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ChatPage({ messages, setMessages, chatInput, setChatInput }) {
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, isTyping]);
+
   const handleSend = () => {
-    if (!chatInput.trim()) return;
-    const userMsg = { role: "user", text: chatInput.trim() };
-    setMessages((prev) => [...prev, userMsg]);
+    if (!chatInput.trim() || isTyping) return;
+    const text = chatInput.trim();
+    setMessages((prev) => [...prev, { role: "user", text, time: formatTime(new Date()) }]);
     setChatInput("");
+    setIsTyping(true);
     setTimeout(() => {
-      setMessages((prev) => [...prev, { role: "bot", text: "Thanks for your message! I'm a demo AI assistant. In production, I'd connect to your knowledge base to answer your questions." }]);
-    }, 800);
+      setMessages((prev) => [...prev, demoBotReply()]);
+      setIsTyping(false);
+    }, 900);
   };
 
   const handleKeyDown = (e) => {
@@ -725,35 +973,96 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput }) {
     }
   };
 
+  const isFresh = messages.length === 0;
+
   return (
     <div className="flex flex-1 flex-col min-h-0 pb-[calc(env(safe-area-inset-bottom)+3.5rem)] md:pb-0">
-      <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-6 space-y-4">
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed sm:max-w-[70%] ${
-              msg.role === "user"
-                ? "bg-indigo-500/20 text-slate-100 border border-indigo-500/20"
-                : "bg-[#1a2540] text-slate-200 border border-white/[0.06]"
-            }`}>
-              {msg.text}
-            </div>
-          </div>
-        ))}
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
+        <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6">
+          {isFresh ? (
+            <WelcomeState onPick={(s) => setChatInput(s)} />
+          ) : (
+            messages.map((msg, i) => <Message key={i} msg={msg} />)
+          )}
+          {isTyping && <TypingIndicator />}
+        </div>
       </div>
-      <div className="border-t border-white/[0.06] px-4 sm:px-6 py-4">
-        <div className="flex items-center gap-3 rounded-xl bg-[#1a2540] px-4 py-3 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:ring-indigo-500/30">
-          <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={handleKeyDown}
-            placeholder="Ask Cortex AI anything..."
-            className="flex-1 bg-transparent text-sm text-slate-200 placeholder-slate-500 outline-none" />
-          <button onClick={handleSend} disabled={!chatInput.trim()}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500 text-white transition-all duration-150 hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13" />
-              <polygon points="22 2 15 22 11 13 2 9 22 2" />
-            </svg>
-          </button>
+
+      <div className="border-t border-white/[0.06] px-4 py-4 sm:px-6">
+        <div className="mx-auto max-w-3xl">
+          <div className="flex items-center gap-1.5 rounded-xl bg-[#1a2540] px-2.5 py-2 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:bg-[#1d2740] focus-within:ring-indigo-500/30">
+            <button aria-label="Attach file" className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-300">
+              <PaperclipIcon className="h-4 w-4" />
+            </button>
+            <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={handleKeyDown}
+              placeholder="Ask Cortex AI anything..." aria-label="Message Cortex AI"
+              className="flex-1 bg-transparent px-1 text-sm text-slate-200 placeholder-slate-500 outline-none" />
+            <button onClick={handleSend} disabled={!chatInput.trim() || isTyping} aria-label="Send message"
+              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-indigo-500 text-white transition-colors duration-150 hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-40">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+/* ─── Chat Icons ─────────────────────────────────────────────── */
+
+function CopyIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+    </svg>
+  );
+}
+
+function RefreshIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 4 23 10 17 10" />
+      <polyline points="1 20 1 14 7 14" />
+      <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+    </svg>
+  );
+}
+
+function ThumbsUpIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 10v12" />
+      <path d="M15 5.88 14 10h5.83a2 2 0 011.92 2.56l-2.33 8A2 2 0 0117.5 22H4a2 2 0 01-2-2v-8a2 2 0 012-2h2.76a2 2 0 001.79-1.11L12 2h0a3.13 3.13 0 013 3.88Z" />
+    </svg>
+  );
+}
+
+function ThumbsDownIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 14V2" />
+      <path d="M9 18.12 10 14H4.17a2 2 0 01-1.92-2.56l2.33-8A2 2 0 016.5 2H20a2 2 0 012 2v8a2 2 0 01-2 2h-2.76a2 2 0 00-1.79 1.11L12 22h0a3.13 3.13 0 01-3-3.88Z" />
+    </svg>
+  );
+}
+
+function PaperclipIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m21.44 11.05-9.19 9.19a6 6 0 01-8.49-8.49l8.57-8.57A4 4 0 1118.84 5l-8.59 8.57a2 2 0 01-2.83-2.83l8.49-8.48" />
+    </svg>
+  );
+}
+
+function ArrowUpRightIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="7" y1="17" x2="17" y2="7" />
+      <polyline points="7 7 17 7 17 17" />
+    </svg>
   );
 }
