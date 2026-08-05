@@ -1,6 +1,9 @@
 import { useState } from "react";
 import Modal from "./Modal";
+import SuccessOverlay from "./SuccessOverlay";
 import { ArrowRightIcon, CheckIcon, GitHubIcon, GoogleIcon } from "./icons";
+import { signupUser } from "../services/authService.js"
+import { useToast } from "../hooks/useToast.jsx"
 
 const PASSWORD_RULES = [
   { label: "At least 15 characters", test: (p) => p.length >= 15 },
@@ -11,21 +14,33 @@ const PASSWORD_RULES = [
 ];
 
 export default function SignUpModal({ onClose, onSwitchToSignIn }) {
-  const [name, setName] = useState("");
+  const toast = useToast();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const checks = PASSWORD_RULES.map((rule) => ({ ...rule, met: rule.test(password) }));
   const strong = checks.every((rule) => rule.met);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!strong) return;
     setSubmitting(true);
-    window.setTimeout(() => {
-      window.location.hash = "#/app";
-    }, 400);
+
+    try { 
+      const res = await signupUser({ firstName, lastName, email, password });
+      localStorage.setItem("token", res.token);
+      setSuccess(true);
+    } 
+    catch (error) {
+      toast.error(error.message);
+    } 
+    finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -54,20 +69,37 @@ export default function SignUpModal({ onClose, onSwitchToSignIn }) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-        <div>
-          <label htmlFor="signup-name" className="mb-1.5 block text-sm font-medium text-slate-300">
-            Full name
-          </label>
-          <input
-            id="signup-name"
-            type="text"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Ada Lovelace"
-            autoComplete="name"
-            className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors focus:border-indigo-400 focus:bg-white/[0.05] sm:px-3.5 sm:py-2.5"
-          />
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label htmlFor="signup-first-name" className="mb-1.5 block text-sm font-medium text-slate-300">
+              First name
+            </label>
+            <input
+              id="signup-first-name"
+              type="text"
+              required
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Ada"
+              autoComplete="given-name"
+              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors focus:border-indigo-400 focus:bg-white/[0.05] sm:px-3.5 sm:py-2.5"
+            />
+          </div>
+          <div>
+            <label htmlFor="signup-last-name" className="mb-1.5 block text-sm font-medium text-slate-300">
+              Last name
+            </label>
+            <input
+              id="signup-last-name"
+              type="text"
+              required
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Lovelace"
+              autoComplete="family-name"
+              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors focus:border-indigo-400 focus:bg-white/[0.05] sm:px-3.5 sm:py-2.5"
+            />
+          </div>
         </div>
         <div>
           <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-slate-300">
@@ -146,6 +178,16 @@ export default function SignUpModal({ onClose, onSwitchToSignIn }) {
           Sign in
         </button>
       </p>
+      {success && (
+        <SuccessOverlay
+          title="Account created"
+          subtitle="Your account has been created successfully"
+          duration={2500}
+          onDone={() => {
+            window.location.hash = "#/app";
+          }}
+        />
+      )}
     </Modal>
-  );
+);
 }

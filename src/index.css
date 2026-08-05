@@ -52,6 +52,15 @@ button {
   cursor: pointer;
 }
 
+* {
+  caret-color: transparent;
+}
+
+input:focus:not(:placeholder-shown),
+textarea:focus:not(:placeholder-shown) {
+  caret-color: #f1f5f9;
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -91,6 +100,32 @@ button {
 
 .animate-float-slower {
   animation: float-slow 9s ease-in-out 1.2s infinite;
+}
+
+/* Toast entrance */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 0.25s cubic-bezier(0.21, 1.02, 0.73, 1);
+}
+
+/* Success popup countdown bar */
+@keyframes progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

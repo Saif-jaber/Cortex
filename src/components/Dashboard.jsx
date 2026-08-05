@@ -726,7 +726,7 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput }) {
   };
 
   return (
-    <div className="flex flex-1 flex-col min-h-0 pb-24 md:pb-0">
+    <div className="flex flex-1 flex-col min-h-0 pb-[calc(env(safe-area-inset-bottom)+3.5rem)] md:pb-0">
       <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-6 space-y-4">
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>

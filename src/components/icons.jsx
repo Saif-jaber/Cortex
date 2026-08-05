@@ -41,6 +41,26 @@ export function CheckIcon({ className }) {
   );
 }
 
+export function AlertIcon({ className }) {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </Svg>
+  );
+}
+
+export function InfoIcon({ className }) {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="11" x2="12" y2="16" />
+      <line x1="12" y1="8" x2="12.01" y2="8" />
+    </Svg>
+  );
+}
+
 export function GitHubIcon({ className }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">

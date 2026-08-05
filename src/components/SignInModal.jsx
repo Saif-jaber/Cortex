@@ -1,18 +1,31 @@
 import { useState } from "react";
 import Modal from "./Modal";
+import SuccessOverlay from "./SuccessOverlay";
 import { ArrowRightIcon, GitHubIcon, GoogleIcon } from "./icons";
+import { loginUser } from "../services/authService.js"
+import { useToast } from "../hooks/useToast.jsx"
 
 export default function SignInModal({ onClose, onSwitchToSignUp }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const toast = useToast();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    window.setTimeout(() => {
-      window.location.hash = "#/app";
-    }, 400);
+    try { 
+      const res = await loginUser({ email, password });
+      localStorage.setItem("token", res.token);
+      setSuccess(true);
+    } 
+    catch (error) {
+        toast.error(error.message);
+    } 
+    finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -100,6 +113,16 @@ export default function SignInModal({ onClose, onSwitchToSignUp }) {
           Create account
         </button>
       </p>
+      {success && (
+        <SuccessOverlay
+          title="Logged in successfully"
+          subtitle="You have been logged in successfully"
+          duration={2500}
+          onDone={() => {
+            window.location.hash = "#/app";
+          }}
+        />
+      )}
     </Modal>
   );
 }
