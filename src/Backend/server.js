@@ -1,13 +1,22 @@
 import "dotenv/config";
 import express from "express";
-import mongoSanitize from "express-mongo-sanitize";
+import { sanitize } from "express-mongo-sanitize";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js"
 
 const app = express();
 
 app.use(express.json());
-app.use(mongoSanitize());
+
+// express-mongo-sanitize's bundled middleware reassigns req.query, which is
+// getter-only in Express 5 and throws. Its sanitize() helper mutates in place,
+// so we call that directly on each request object.
+app.use((req, res, next) => {
+  ["body", "params", "headers", "query"].forEach((key) => {
+    if (req[key]) sanitize(req[key]);
+  });
+  next();
+});
 
 connectDB();
 

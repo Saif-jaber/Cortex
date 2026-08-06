@@ -78,6 +78,7 @@ export default function Dashboard({ onExitHome }) {
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [showPopup, setShowPopup] = useState(null);
+  const [showApiKey, setShowApiKey] = useState(false);
   const [folderCards, setFolderCards] = useState(DEFAULT_FOLDER_CARDS);
   const [files, setFiles] = useState(DEFAULT_FILES);
 
@@ -135,7 +136,7 @@ export default function Dashboard({ onExitHome }) {
       {/* Second Sidebar */}
       <aside className="hidden w-[280px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0d1220] lg:flex">
         {activeNav === "chat" ? (
-          <ChatSidebarPanel closeButton={null} />
+          <ChatSidebarPanel closeButton={null} onOpenApiKey={() => setShowApiKey(true)} />
         ) : (
           <SidebarPanel
             closeButton={null}
@@ -276,6 +277,7 @@ export default function Dashboard({ onExitHome }) {
           </div>
         )}
         {showPopup && <Popup type={showPopup} onClose={() => setShowPopup(null)} onAddFolder={(name) => setFolderCards((prev) => [...prev, { id: Date.now(), name, files: 0, updated: "just now", peek: null, tint: "from-indigo-500/8" }])} onAddFile={(file) => setFiles((prev) => [...prev, { id: Date.now(), name: file.name, type: file.name.split(".").pop().toLowerCase(), size: (file.size / 1024).toFixed(1) + " KB", date: "just now", addedBy: { name: "Sarah Chen", email: "sarah@cortex.io", gradient: "from-blue-500 to-cyan-400" } }])} />}
+        {showApiKey && <ApiKeyModal onClose={() => setShowApiKey(false)} />}
       </main>
 
       {/* Mobile / Tablet Sidebar Drawer */}
@@ -294,6 +296,10 @@ export default function Dashboard({ onExitHome }) {
                   <XIcon className="h-4 w-4" />
                 </button>
               }
+              onOpenApiKey={() => {
+                setShowApiKey(true);
+                setSidebarOpen(false);
+              }}
             />
           ) : (
             <SidebarPanel
@@ -380,7 +386,7 @@ function SidebarPanel({ closeButton, activeTab, setActiveTab, searchQuery, setSe
   );
 }
 
-function ChatSidebarPanel({ closeButton }) {
+function ChatSidebarPanel({ closeButton, onOpenApiKey }) {
   const [query, setQuery] = useState("");
 
   const filtered = CHAT_HISTORY.filter(
@@ -427,6 +433,17 @@ function ChatSidebarPanel({ closeButton }) {
             </button>
           ))
         )}
+      </div>
+
+      <div className="border-t border-white/[0.06] p-2.5 sm:p-3">
+        <button onClick={onOpenApiKey}
+          className="flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-[13px] font-medium text-slate-300 transition-all duration-150 hover:border-indigo-500/30 hover:bg-white/[0.06] hover:text-slate-100 sm:px-3.5">
+          <span className="flex items-center gap-2.5">
+            <KeyIcon className="h-4 w-4 text-slate-500" />
+            API Key
+          </span>
+          <PlusIcon className="h-4 w-4 text-slate-500" />
+        </button>
       </div>
     </>
   );
@@ -582,6 +599,17 @@ function SearchIcon({ className }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
+
+function KeyIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7.5" cy="15.5" r="4.5" />
+      <path d="M10.7 12.3L21 2" />
+      <path d="M17 6l3 3" />
+      <path d="M13.5 9.5l2.5 2.5" />
     </svg>
   );
 }
@@ -771,6 +799,85 @@ function Popup({ type, onClose, onAddFolder, onAddFile }) {
         </div>
       </div>
     </>
+  );
+}
+
+function ApiKeyModal({ onClose }) {
+  const [currentKey] = useState("sk-proj-•••••••••••••••••x4F2");
+  const [newKey, setNewKey] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+
+  const handleSubmit = () => {
+    onClose();
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed left-1/2 top-1/2 z-40 flex max-h-[88vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#182032] shadow-2xl shadow-black/40">
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-4 sm:px-5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/15 ring-1 ring-indigo-500/20">
+              <KeyIcon className="h-4 w-4 text-indigo-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-slate-200">API Key</h3>
+              <p className="text-[11px] text-slate-500">Manage your AI credentials</p>
+            </div>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="space-y-4 overflow-y-auto px-4 py-5 sm:px-5">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-slate-400">Current Key</label>
+            <div className="relative">
+              <input type={showCurrent ? "text" : "password"} value={currentKey} readOnly aria-label="Current API key"
+                className="w-full rounded-lg bg-white/[0.03] px-3 py-2 pr-10 text-sm text-slate-300 outline-none ring-1 ring-white/[0.06]" />
+              <button type="button" onClick={() => setShowCurrent(!showCurrent)} aria-label={showCurrent ? "Hide current key" : "Show current key"}
+                className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-300">
+                <EyeIcon className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-slate-400">New Key</label>
+            <div className="relative">
+              <input type={showNew ? "text" : "password"} value={newKey} onChange={(e) => setNewKey(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="Enter a new key..." autoFocus
+                className="w-full rounded-lg bg-white/[0.04] px-3 py-2 pr-10 text-sm text-slate-200 placeholder-slate-500 outline-none ring-1 ring-white/[0.06] transition-all duration-200 focus:ring-indigo-500/30" />
+              <button type="button" onClick={() => setShowNew(!showNew)} aria-label={showNew ? "Hide new key" : "Show new key"}
+                className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-300">
+                <EyeIcon className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs leading-relaxed text-slate-500">Your key is stored securely on this device and used only to power AI features.</p>
+        </div>
+
+        <div className="flex flex-col-reverse gap-2 border-t border-white/[0.06] px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:flex-row sm:justify-end sm:px-5 sm:pb-4">
+          <button onClick={onClose} className="w-full rounded-lg px-4 py-2.5 text-xs font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200 sm:w-auto sm:py-2">Cancel</button>
+          <button onClick={handleSubmit} disabled={!newKey.trim()} className="w-full rounded-lg bg-indigo-500 px-4 py-2.5 text-xs font-medium text-white transition-all duration-150 hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed sm:w-auto sm:py-2">
+            Save Key
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function EyeIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
   );
 }
 
