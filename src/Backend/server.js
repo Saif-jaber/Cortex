@@ -3,6 +3,7 @@ import express from "express";
 import { sanitize } from "express-mongo-sanitize";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js"
+import folderRoutes from "./routes/folder.js"
 
 const app = express();
 
@@ -22,6 +23,8 @@ connectDB();
 
 // Auth routes 
 app.use("/api/auth", authRoutes);
+// Folder routes
+app.use("/api/folders", folderRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

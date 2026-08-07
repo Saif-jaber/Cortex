@@ -7,47 +7,6 @@ const NAV_ITEMS = [
   { id: "analytics", label: "Analytics", mobile: "Analytics", icon: AnalyticsIcon },
 ];
 
-const FOLDER_TREE = [
-  {
-    id: "general",
-    name: "General Knowledge",
-    count: 10,
-    children: [
-      {
-        id: "onboarding",
-        name: "Onboarding",
-        count: 3,
-        children: [
-          { id: "sub1", name: "Subfolder 1", count: 5 },
-          { id: "sub2", name: "Subfolder 2", count: 10 },
-        ],
-      },
-      { id: "integrations", name: "Integrations", count: null },
-      { id: "documents", name: "Documents", count: null },
-    ],
-  },
-  { id: "design", name: "Onboarding Design", count: null },
-  { id: "interviews", name: "Team Interviews", count: null },
-];
-
-const DEFAULT_FOLDER_CARDS = [
-  { id: 1, name: "General Knowledge", files: 10, updated: "2h ago", peek: "pdf", tint: "from-indigo-500/8" },
-  { id: 2, name: "Onboarding", files: 3, updated: "5h ago", peek: "doc", tint: "from-emerald-500/8" },
-  { id: 3, name: "Integrations", files: 7, updated: "1d ago", peek: null, tint: "from-amber-500/8" },
-  { id: 4, name: "Documents", files: 15, updated: "3h ago", peek: "pdf", tint: "from-sky-500/8" },
-  { id: 5, name: "Onboarding Design", files: 8, updated: "6h ago", peek: "figma", tint: "from-pink-500/8" },
-  { id: 6, name: "Team Interviews", files: 4, updated: "2d ago", peek: null, tint: "from-violet-500/8" },
-];
-
-const DEFAULT_FILES = [
-  { id: 1, name: "product-spec.pdf", type: "pdf", size: "2.4 MB", date: "Jul 25", addedBy: { name: "Sarah Chen", email: "sarah@cortex.io", gradient: "from-blue-500 to-cyan-400" } },
-  { id: 2, name: "onboarding-guide.docx", type: "word", size: "1.1 MB", date: "Jul 24", addedBy: { name: "James Wilson", email: "james@cortex.io", gradient: "from-emerald-500 to-teal-400" } },
-  { id: 3, name: "api-integration.md", type: "markdown", size: "340 KB", date: "Jul 23", addedBy: { name: "Alex Rivera", email: "alex@cortex.io", gradient: "from-violet-500 to-purple-400" } },
-  { id: 4, name: "team-standup-notes.pdf", type: "pdf", size: "890 KB", date: "Jul 22", addedBy: { name: "Maria Lopez", email: "maria@cortex.io", gradient: "from-amber-500 to-orange-400" } },
-  { id: 5, name: "design-system-v2.fig", type: "figma", size: "5.7 MB", date: "Jul 21", addedBy: { name: "Sarah Chen", email: "sarah@cortex.io", gradient: "from-blue-500 to-cyan-400" } },
-  { id: 6, name: "q3-report.docx", type: "word", size: "1.8 MB", date: "Jul 20", addedBy: { name: "James Wilson", email: "james@cortex.io", gradient: "from-emerald-500 to-teal-400" } },
-];
-
 const CHAT_HISTORY = [
   { id: 1, title: "Onboarding flow improvements", snippet: "How should we structure the new user onboarding...", time: "2h ago" },
   { id: 2, title: "Product spec questions", snippet: "What edge cases should the file uploader handle...", time: "5h ago" },
@@ -56,22 +15,30 @@ const CHAT_HISTORY = [
   { id: 5, title: "Design system tokens", snippet: "Compare our spacing scale to Tailwind's default...", time: "3d ago" },
 ];
 
-function findFolderName(tree, id) {
-  for (const f of tree) {
-    if (f.id === id) return f.name;
-    if (f.children) {
-      const found = findFolderName(f.children, id);
-      if (found) return found;
-    }
-  }
-  return null;
+function folderId(f) {
+  return f?._id || f?.id;
 }
 
+function folderName(f) {
+  return f?.folderName || f?.name;
+}
+
+function formatRelativeTime(date) {
+  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (!isFinite(seconds) || seconds < 0) return "";
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(date).toLocaleDateString();
+}
 export default function Dashboard({ onExitHome }) {
   const [activeNav, setActiveNav] = useState("knowledge");
   const [activeTab, setActiveTab] = useState("folders");
-  const [expandedFolders, setExpandedFolders] = useState(new Set(["general"]));
-  const [selectedFolder, setSelectedFolder] = useState("general");
+  const [selectedFolder, setSelectedFolder] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [breadcrumbOpen, setBreadcrumbOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -79,16 +46,8 @@ export default function Dashboard({ onExitHome }) {
   const [chatInput, setChatInput] = useState("");
   const [showPopup, setShowPopup] = useState(null);
   const [showApiKey, setShowApiKey] = useState(false);
-  const [folderCards, setFolderCards] = useState(DEFAULT_FOLDER_CARDS);
-  const [files, setFiles] = useState(DEFAULT_FILES);
-
-  const toggleFolder = (id) => {
-    setExpandedFolders((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
+  const [folderCards, setFolderCards] = useState([]);
+  const [files, setFiles] = useState([]);
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -104,7 +63,7 @@ export default function Dashboard({ onExitHome }) {
     setSidebarOpen(false);
   };
 
-  const selectedFolderName = findFolderName(FOLDER_TREE, selectedFolder) || "General Knowledge";
+  const selectedFolderName = folderName(folderCards.find((f) => folderId(f) === selectedFolder)) || "All Folders";
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#0a0e1a] font-sans text-slate-100">
@@ -144,9 +103,8 @@ export default function Dashboard({ onExitHome }) {
             setActiveTab={setActiveTab}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            expandedFolders={expandedFolders}
+            folders={folderCards}
             selectedFolder={selectedFolder}
-            onToggle={toggleFolder}
             onSelect={handleSelectFolder}
           />
         )}
@@ -175,12 +133,12 @@ export default function Dashboard({ onExitHome }) {
                     <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Folders</span>
                   </div>
                   {folderCards.map((f) => {
-                    const isSel = selectedFolder === f.id;
+                    const isSel = selectedFolder === folderId(f);
                     return (
-                      <button key={f.id} onClick={() => setBreadcrumbOpen(false)}
+                      <button key={folderId(f)} onClick={() => { setSelectedFolder(folderId(f)); setBreadcrumbOpen(false); }}
                         className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/[0.06]">
                         <FolderSmallIcon className="h-4 w-4 shrink-0 text-slate-500" />
-                        <span className="flex-1 truncate">{f.name}</span>
+                        <span className="flex-1 truncate">{folderName(f)}</span>
                         {isSel && <CheckIcon className="h-3.5 w-3.5 shrink-0 text-indigo-400" />}
                       </button>
                     );
@@ -217,11 +175,20 @@ export default function Dashboard({ onExitHome }) {
                   <PlusIcon className="h-3.5 w-3.5" /> Add
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
-                {folderCards.map((folder) => (
-                  <FolderCard key={folder.id} folder={folder} />
-                ))}
-              </div>
+              {folderCards.length === 0 ? (
+                <EmptyState
+                  title="No folders yet"
+                  hint="Create your first folder to start organizing your knowledge base."
+                  actionLabel="Create Folder"
+                  onAction={() => setShowPopup("folder")}
+                />
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
+                  {folderCards.map((folder) => (
+                    <FolderCard key={folderId(folder)} folder={folder} />
+                  ))}
+                </div>
+              )}
             </section>
 
             {/* Files Section */}
@@ -233,50 +200,61 @@ export default function Dashboard({ onExitHome }) {
                 </button>
               </div>
 
-              <div className="space-y-2 md:hidden">
-                {files.map((file) => (
-                  <div key={file.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#131b2e] px-3.5 py-3 transition-colors duration-150 hover:bg-[#182032]">
-                    <FileTypeIcon type={file.type} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-200">{file.name}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">{file.size} · {file.date}</p>
-                    </div>
-                    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${file.addedBy.gradient} text-[9px] font-bold text-white shadow-sm`}>
-                      {file.addedBy.name.split(" ").map((n) => n[0]).join("")}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="hidden overflow-x-auto rounded-xl border border-white/[0.06] bg-[#131b2e] md:block">
-                <div className="grid grid-cols-[1fr_auto_auto_auto] items-center border-b border-white/[0.06] px-5 py-3">
-                  <span className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Name</span>
-                  <span className="w-24 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Size</span>
-                  <span className="w-20 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Date</span>
-                  <span className="w-28 sm:w-44 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Added By</span>
-                </div>
-                {files.map((file, i) => (
-                  <div key={file.id}
-                    className={`group grid grid-cols-[1fr_auto_auto_auto] items-center px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03] ${i < files.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <FileTypeIcon type={file.type} />
-                      <span className="truncate text-sm font-medium text-slate-200 group-hover:text-slate-100 transition-colors">{file.name}</span>
-                    </div>
-                    <span className="w-24 text-right text-xs text-slate-500">{file.size}</span>
-                    <span className="w-20 text-right text-xs text-slate-500">{file.date}</span>
-                    <div className="flex w-28 sm:w-44 items-center justify-end gap-2.5">
-                      <div className={`flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br ${file.addedBy.gradient} text-[9px] font-bold text-white shadow-sm`}>
-                        {file.addedBy.name.split(" ").map((n) => n[0]).join("")}
+              {files.length === 0 ? (
+                <EmptyState
+                  title="No files yet"
+                  hint="Upload a file and it will show up here."
+                  actionLabel="Upload File"
+                  onAction={() => setShowPopup("file")}
+                />
+              ) : (
+                <>
+                  <div className="space-y-2 md:hidden">
+                    {files.map((file) => (
+                      <div key={file.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#131b2e] px-3.5 py-3 transition-colors duration-150 hover:bg-[#182032]">
+                        <FileTypeIcon type={file.type} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-slate-200">{file.name}</p>
+                          <p className="mt-0.5 text-xs text-slate-500">{file.size} · {file.date}</p>
+                        </div>
+                        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${file.addedBy.gradient} text-[9px] font-bold text-white shadow-sm`}>
+                          {file.addedBy.name.split(" ").map((n) => n[0]).join("")}
+                        </div>
                       </div>
-                      <span className="hidden sm:block text-xs text-slate-400">{file.addedBy.email}</span>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+
+                  <div className="hidden overflow-x-auto rounded-xl border border-white/[0.06] bg-[#131b2e] md:block">
+                    <div className="grid grid-cols-[1fr_auto_auto_auto] items-center border-b border-white/[0.06] px-5 py-3">
+                      <span className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Name</span>
+                      <span className="w-24 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Size</span>
+                      <span className="w-20 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Date</span>
+                      <span className="w-28 sm:w-44 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Added By</span>
+                    </div>
+                    {files.map((file, i) => (
+                      <div key={file.id}
+                        className={`group grid grid-cols-[1fr_auto_auto_auto] items-center px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03] ${i < files.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <FileTypeIcon type={file.type} />
+                          <span className="truncate text-sm font-medium text-slate-200 group-hover:text-slate-100 transition-colors">{file.name}</span>
+                        </div>
+                        <span className="w-24 text-right text-xs text-slate-500">{file.size}</span>
+                        <span className="w-20 text-right text-xs text-slate-500">{file.date}</span>
+                        <div className="flex w-28 sm:w-44 items-center justify-end gap-2.5">
+                          <div className={`flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br ${file.addedBy.gradient} text-[9px] font-bold text-white shadow-sm`}>
+                            {file.addedBy.name.split(" ").map((n) => n[0]).join("")}
+                          </div>
+                          <span className="hidden sm:block text-xs text-slate-400">{file.addedBy.email}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </section>
           </div>
         )}
-        {showPopup && <Popup type={showPopup} onClose={() => setShowPopup(null)} onAddFolder={(name) => setFolderCards((prev) => [...prev, { id: Date.now(), name, files: 0, updated: "just now", peek: null, tint: "from-indigo-500/8" }])} onAddFile={(file) => setFiles((prev) => [...prev, { id: Date.now(), name: file.name, type: file.name.split(".").pop().toLowerCase(), size: (file.size / 1024).toFixed(1) + " KB", date: "just now", addedBy: { name: "Sarah Chen", email: "sarah@cortex.io", gradient: "from-blue-500 to-cyan-400" } }])} />}
+        {showPopup && <Popup type={showPopup} folders={folderCards} onClose={() => setShowPopup(null)} onAddFolder={(name) => setFolderCards((prev) => [...prev, { id: Date.now(), name, files: 0, updated: "just now", peek: null, tint: "from-indigo-500/8" }])} onAddFile={(files, folderId) => setFiles((prev) => [...prev, ...files.map((file) => ({ id: file.name + Date.now(), name: file.name, folderId, type: file.name.split(".").pop().toLowerCase(), size: file.size / 1024 / 1024 > 1 ? (file.size / 1024 / 1024).toFixed(1) + " MB" : (file.size / 1024).toFixed(1) + " KB", date: "just now", addedBy: { name: "Sarah Chen", email: "sarah@cortex.io", gradient: "from-blue-500 to-cyan-400" } }))])} />}
         {showApiKey && <ApiKeyModal onClose={() => setShowApiKey(false)} />}
       </main>
 
@@ -313,9 +291,8 @@ export default function Dashboard({ onExitHome }) {
               setActiveTab={setActiveTab}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
-              expandedFolders={expandedFolders}
+              folders={folderCards}
               selectedFolder={selectedFolder}
-              onToggle={toggleFolder}
               onSelect={handleSelectFolder}
             />
           )}
@@ -341,7 +318,7 @@ export default function Dashboard({ onExitHome }) {
   );
 }
 
-function SidebarPanel({ closeButton, activeTab, setActiveTab, searchQuery, setSearchQuery, expandedFolders, selectedFolder, onToggle, onSelect }) {
+function SidebarPanel({ closeButton, activeTab, setActiveTab, searchQuery, setSearchQuery, folders, selectedFolder, onSelect }) {
   return (
     <>
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
@@ -378,9 +355,13 @@ function SidebarPanel({ closeButton, activeTab, setActiveTab, searchQuery, setSe
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-4">
-        {FOLDER_TREE.map((folder) => (
-          <FolderTreeNode key={folder.id} folder={folder} depth={0} expandedFolders={expandedFolders} selectedFolder={selectedFolder} onToggle={onToggle} onSelect={onSelect} />
-        ))}
+        {folders.length === 0 ? (
+          <p className="px-2 py-8 text-center text-xs text-slate-500">No folders yet</p>
+        ) : (
+          folders.map((folder) => (
+            <FolderTreeNode key={folderId(folder)} folder={folder} selectedFolder={selectedFolder} onSelect={onSelect} />
+          ))
+        )}
       </div>
     </>
   );
@@ -449,43 +430,21 @@ function ChatSidebarPanel({ closeButton, onOpenApiKey }) {
   );
 }
 
-function FolderTreeNode({ folder, depth, expandedFolders, selectedFolder, onToggle, onSelect }) {
-  const isExpanded = expandedFolders.has(folder.id);
-  const isSelected = selectedFolder === folder.id;
-  const hasChildren = folder.children && folder.children.length > 0;
-
+function FolderTreeNode({ folder, selectedFolder, onSelect }) {
+  const isSelected = selectedFolder === folderId(folder);
   return (
     <div className="overflow-hidden">
-      <button onClick={() => { onSelect(folder.id); if (hasChildren) onToggle(folder.id); }}
-        className={`group flex w-full items-center gap-2 rounded-lg py-1.5 pr-2 text-left text-sm transition-all duration-200 ${depth > 0 ? "ml-4 pl-3" : "pl-2"} ${isSelected ? "bg-white/[0.07] text-slate-100" : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-300"}`}>
-        {hasChildren ? (
-          <ChevronIcon className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90 text-slate-500" : "text-slate-600"}`} />
-        ) : (
-          <span className="w-3.5 shrink-0" />
-        )}
+      <button onClick={() => onSelect(folderId(folder))}
+        className={`group flex w-full items-center gap-2 rounded-lg py-1.5 pl-2 pr-2 text-left text-sm transition-all duration-200 ${isSelected ? "bg-white/[0.07] text-slate-100" : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-300"}`}>
         <FolderSmallIcon className={`h-4 w-4 shrink-0 transition-colors duration-200 ${isSelected ? "text-indigo-400" : "text-slate-600"}`} />
-        <span className="flex-1 truncate">{folder.name}</span>
-        {folder.count != null && (
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors duration-200 ${isSelected ? "bg-indigo-500/15 text-indigo-300" : "bg-white/[0.05] text-slate-500"}`}>
-            {folder.count}
-          </span>
-        )}
+        <span className="flex-1 truncate">{folderName(folder)}</span>
       </button>
-      {hasChildren && isExpanded && (
-        <div className="relative ml-3">
-          <div className="absolute bottom-1 left-[9px] top-1 w-px bg-gradient-to-b from-white/[0.08] to-transparent" />
-          <div className="pl-1">
-            {folder.children.map((child) => (
-              <FolderTreeNode key={child.id} folder={child} depth={depth + 1} expandedFolders={expandedFolders} selectedFolder={selectedFolder} onToggle={onToggle} onSelect={onSelect} />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 function FolderCard({ folder }) {
+  const updated = folder.updated || (folder.updatedAt ? formatRelativeTime(folder.updatedAt) : "");
   return (
     <button className="group flex w-full flex-col items-center rounded-xl border border-white/[0.06] bg-[#131b2e] p-4 transition-colors duration-150 hover:bg-[#182032] sm:p-5">
       <div className="relative mb-3 sm:mb-4">
@@ -515,10 +474,26 @@ function FolderCard({ folder }) {
         )}
         <FolderLargeIcon className="h-[50px] w-[50px]" />
       </div>
-      <span className="text-[13px] font-medium text-slate-200">{folder.name}</span>
-      <span className="mt-0.5 text-[11px] text-slate-500">{folder.files} Files</span>
-      <span className="mt-1 text-[10px] text-slate-600">{folder.updated}</span>
+      <span className="text-[13px] font-medium text-slate-200">{folder.folderName || folder.name}</span>
+      <span className="mt-0.5 text-[11px] text-slate-500">{folder.files ?? 0} Files</span>
+      <span className="mt-1 text-[10px] text-slate-600">{updated}</span>
     </button>
+  );
+}
+
+function EmptyState({ title, hint, actionLabel, onAction }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-white/[0.08] bg-white/[0.02] px-6 py-12 text-center">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04]">
+        <FolderLargeIcon className="h-6 w-6 opacity-70" />
+      </div>
+      <p className="mt-3 text-sm font-medium text-slate-300">{title}</p>
+      <p className="mt-1 max-w-xs text-xs text-slate-500">{hint}</p>
+      <button onClick={onAction}
+        className="mt-4 flex items-center gap-1.5 rounded-lg bg-indigo-500 px-3.5 py-2 text-xs font-medium text-white transition-colors duration-150 hover:bg-indigo-400">
+        <PlusIcon className="h-3.5 w-3.5" /> {actionLabel}
+      </button>
+    </div>
   );
 }
 
@@ -659,14 +634,6 @@ function XIcon({ className }) {
   );
 }
 
-function ChevronIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
-  );
-}
-
 function CheckIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -740,9 +707,10 @@ function FileTypeSVG({ type, className }) {
   return icons[type] || icons.pdf;
 }
 
-function Popup({ type, onClose, onAddFolder, onAddFile }) {
+function Popup({ type, folders, onClose, onAddFolder, onAddFile }) {
   const [name, setName] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedFolder, setSelectedFolder] = useState("");
 
   const handleSubmit = () => {
     if (type === "folder") {
@@ -750,8 +718,8 @@ function Popup({ type, onClose, onAddFolder, onAddFile }) {
       onAddFolder(name.trim());
       onClose();
     } else {
-      if (!selectedFile) return;
-      onAddFile(selectedFile);
+      if (selectedFiles.length === 0 || !selectedFolder) return;
+      onAddFile(selectedFiles, selectedFolder);
       onClose();
     }
   };
@@ -761,7 +729,7 @@ function Popup({ type, onClose, onAddFolder, onAddFile }) {
       <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="fixed left-1/2 top-1/2 z-40 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-white/[0.08] bg-[#182032] shadow-2xl shadow-black/40">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
-          <h3 className="text-sm font-semibold text-slate-200">{type === "folder" ? "New Folder" : "Upload File"}</h3>
+          <h3 className="text-sm font-semibold text-slate-200">{type === "folder" ? "New Folder" : "Upload Files"}</h3>
           <button onClick={onClose} className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -776,25 +744,59 @@ function Popup({ type, onClose, onAddFolder, onAddFile }) {
                 className="w-full rounded-lg bg-white/[0.04] px-3 py-2 text-sm text-slate-200 placeholder-slate-500 outline-none ring-1 ring-white/[0.06] transition-all duration-200 focus:ring-indigo-500/30" />
             </div>
           ) : (
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-400">Choose a file from your computer</label>
-              <div className="relative">
-                <input type="file" id="file-upload" onChange={(e) => setSelectedFile(e.target.files[0])} className="hidden" />
-                <label htmlFor="file-upload" className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-white/[0.08] bg-white/[0.02] px-4 py-8 transition-all duration-200 hover:border-indigo-500/30 hover:bg-white/[0.04]">
-                  <svg className="h-8 w-8 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                  <span className="text-sm text-slate-400">{selectedFile ? selectedFile.name : "Click to browse files"}</span>
-                  {selectedFile && <span className="text-xs text-slate-500">{(selectedFile.size / 1024).toFixed(1)} KB</span>}
-                </label>
+            <>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-400">Choose files from your computer</label>
+                <div className="relative">
+                  <input type="file" id="file-upload" multiple onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))} className="hidden" />
+                  <label htmlFor="file-upload" className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-white/[0.08] bg-white/[0.02] px-4 py-8 transition-all duration-200 hover:border-indigo-500/30 hover:bg-white/[0.04]">
+                    <svg className="h-8 w-8 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <span className="text-sm text-slate-400">{selectedFiles.length > 0 ? `${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected` : "Click to browse files"}</span>
+                    {selectedFiles.length > 0 && <span className="text-xs text-slate-500">{selectedFiles.reduce((total, f) => total + f.size, 0) / 1024 / 1024 > 1 ? (selectedFiles.reduce((total, f) => total + f.size, 0) / 1024 / 1024).toFixed(1) + " MB" : (selectedFiles.reduce((total, f) => total + f.size, 0) / 1024).toFixed(1) + " KB"}</span>}
+                  </label>
+                </div>
+                {selectedFiles.length > 0 && (
+                  <ul className="mt-2 max-h-24 space-y-1 overflow-y-auto">
+                    {selectedFiles.map((f, i) => (
+                      <li key={i} className="flex items-center justify-between gap-2 rounded-md bg-white/[0.03] px-2.5 py-1.5">
+                        <span className="truncate text-xs text-slate-300">{f.name}</span>
+                        <button aria-label={`Remove ${f.name}`} onClick={() => setSelectedFiles((prev) => prev.filter((_, idx) => idx !== i))} className="shrink-0 text-slate-500 transition-colors hover:text-slate-300">
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-            </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-400">Destination Folder</label>
+                <div className="relative">
+                  <select value={selectedFolder} onChange={(e) => setSelectedFolder(e.target.value)}
+                    className="w-full appearance-none rounded-lg bg-white/[0.04] px-3 py-2 pr-9 text-sm text-slate-200 outline-none ring-1 ring-white/[0.06] transition-all duration-200 focus:ring-indigo-500/30 [&>option]:bg-[#182032] [&>option]:text-slate-200">
+                    <option value="" disabled>Select a folder…</option>
+                    {folders.map((f) => (
+                      <option key={folderId(f)} value={folderId(f)}>{folderName(f)}</option>
+                    ))}
+                  </select>
+                  <svg className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+                {folders.length === 0 && (
+                  <p className="mt-1.5 text-xs text-slate-500">No folders yet — create one first.</p>
+                )}
+              </div>
+            </>
           )}
         </div>
         <div className="flex justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
           <button onClick={onClose} className="rounded-lg px-4 py-2 text-xs font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">Cancel</button>
-          <button onClick={handleSubmit} disabled={type === "folder" ? !name.trim() : !selectedFile} className="rounded-lg bg-indigo-500 px-4 py-2 text-xs font-medium text-white transition-all duration-150 hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed">
-            {type === "folder" ? "Create Folder" : "Upload File"}
+          <button onClick={handleSubmit} disabled={type === "folder" ? !name.trim() : selectedFiles.length === 0 || !selectedFolder} className="rounded-lg bg-indigo-500 px-4 py-2 text-xs font-medium text-white transition-all duration-150 hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed">
+            {type === "folder" ? "Create Folder" : `Upload ${selectedFiles.length > 0 ? selectedFiles.length : ""}`.trim()}
           </button>
         </div>
       </div>
