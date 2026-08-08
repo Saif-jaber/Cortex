@@ -14,7 +14,7 @@ export async function createFolder(req, res){
         const {folderName} = req.body;
 
         if(!folderName){
-            return res.status(400).json({ error: "folderName is required" });
+            return res.status(400).json({ error: "folder name is required" });
         }
 
         const folder = await Folder.create({ folderName, owner: req.user.id});
