@@ -3,6 +3,7 @@ import FolderPopup from "./FolderPopup";
 import FilePopup from "./FilePopup";
 import ProfilePage from "./ProfilePage";
 import { listFolders } from "../services/folderService.js"
+import { listFiles } from "../services/fileService.js"
 
 const NAV_ITEMS = [
   { id: "knowledge", label: "Knowledge Base", mobile: "Knowledge", icon: DatabaseIcon },
@@ -39,6 +40,43 @@ function formatRelativeTime(date) {
   if (days < 7) return `${days}d ago`;
   return new Date(date).toLocaleDateString();
 }
+
+const GRADIENTS = ["from-blue-500 to-cyan-400", "from-violet-500 to-fuchsia-400", "from-emerald-500 to-teal-400", "from-rose-500 to-orange-400"];
+
+function fileType(fileType) {
+  if (!fileType) return "pdf";
+  if (fileType.includes("pdf")) return "pdf";
+  if (fileType.includes("word") || fileType.includes("document")) return "word";
+  if (fileType.includes("presentation")) return "word";
+  return "pdf";
+}
+
+function fileId(f) {
+  return f?._id || f?.id;
+}
+
+function formatFileSize(bytes) {
+  if (!bytes && bytes !== 0) return "";
+  if (bytes / 1024 / 1024 >= 1) return (bytes / 1024 / 1024).toFixed(1) + " MB";
+  return (bytes / 1024).toFixed(1) + " KB";
+}
+
+function toFileCard(f, index) {
+  const owner = f.owner || {};
+  return {
+    id: fileId(f),
+    name: f.fileName || f.name,
+    type: fileType(f.fileType || f.type),
+    size: formatFileSize(f.fileSize ?? f.size),
+    date: formatRelativeTime(f.createdAt || f.date),
+    folder: f.folder || null,
+    addedBy: {
+      name: owner.firstName ? `${owner.firstName} ${owner.lastName || ""}`.trim() : "Unknown",
+      email: owner.email || "",
+      gradient: GRADIENTS[(index || 0) % GRADIENTS.length],
+    },
+  };
+}
 export default function Dashboard({ onExitHome }) {
   const [activeNav, setActiveNav] = useState("knowledge");
   const [activeTab, setActiveTab] = useState("folders");
@@ -58,6 +96,9 @@ export default function Dashboard({ onExitHome }) {
     listFolders()
       .then((folders) => { if (!cancelled) setFolderCards(folders); })
       .catch(() => {});
+    listFiles()
+      .then((files) => { if (!cancelled) setFiles(files.map((f, i) => toFileCard(f, i))); })
+      .catch(() => {});
     return () => { cancelled = true; };
    }, []);
 
@@ -76,6 +117,15 @@ export default function Dashboard({ onExitHome }) {
   };
 
   const selectedFolderName = folderName(folderCards.find((f) => folderId(f) === selectedFolder)) || "All Folders";
+
+  const filesByFolder = files.reduce((acc, f) => {
+    if (f.folder) acc[f.folder] = (acc[f.folder] || 0) + 1;
+    return acc;
+  }, {});
+
+  const visibleFiles = selectedFolder
+    ? files.filter((f) => f.folder === selectedFolder)
+    : files;
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#0a0e1a] font-sans text-slate-100">
@@ -211,7 +261,7 @@ export default function Dashboard({ onExitHome }) {
               ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
                   {folderCards.map((folder) => (
-                    <FolderCard key={folderId(folder)} folder={folder} />
+                    <FolderCard key={folderId(folder)} folder={folder} fileCount={filesByFolder[folderId(folder)] || 0} selected={selectedFolder === folderId(folder)} onSelect={() => handleSelectFolder(folderId(folder))} />
                   ))}
                 </div>
               )}
@@ -220,23 +270,31 @@ export default function Dashboard({ onExitHome }) {
             {/* Files Section */}
             <section>
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-slate-100">Files</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-slate-100">Files</h3>
+                  {selectedFolder && (
+                    <button onClick={() => handleSelectFolder(null)} className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-slate-300 ring-1 ring-white/[0.08] transition-colors duration-150 hover:bg-white/[0.08]">
+                      {selectedFolderName}
+                      <XIcon className="h-3 w-3 text-slate-400" />
+                    </button>
+                  )}
+                </div>
                 <button onClick={() => setShowPopup("file")} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
                   <PlusIcon className="h-3.5 w-3.5" /> Add
                 </button>
               </div>
 
-              {files.length === 0 ? (
+              {visibleFiles.length === 0 ? (
                 <EmptyState
-                  title="No files yet"
-                  hint="Upload a file and it will show up here."
-                  actionLabel="Upload File"
+                  title={selectedFolder ? "No files in this folder" : "No files yet"}
+                  hint={selectedFolder ? "Upload a file into this folder to see it here." : "Upload a file and it will show up here."}
+                  actionLabel={selectedFolder ? "Upload File" : "Upload File"}
                   onAction={() => setShowPopup("file")}
                 />
               ) : (
                 <>
                   <div className="space-y-2 md:hidden">
-                    {files.map((file) => (
+                    {visibleFiles.map((file) => (
                       <div key={file.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#131b2e] px-3.5 py-3 transition-colors duration-150 hover:bg-[#182032]">
                         <FileTypeIcon type={file.type} />
                         <div className="min-w-0 flex-1">
@@ -257,9 +315,9 @@ export default function Dashboard({ onExitHome }) {
                       <span className="w-20 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Date</span>
                       <span className="w-28 sm:w-44 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Added By</span>
                     </div>
-                    {files.map((file, i) => (
+                    {visibleFiles.map((file, i) => (
                       <div key={file.id}
-                        className={`group grid grid-cols-[1fr_auto_auto_auto] items-center px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03] ${i < files.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
+                        className={`group grid grid-cols-[1fr_auto_auto_auto] items-center px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03] ${i < visibleFiles.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
                         <div className="flex items-center gap-3 min-w-0">
                           <FileTypeIcon type={file.type} />
                           <span className="truncate text-sm font-medium text-slate-200 group-hover:text-slate-100 transition-colors">{file.name}</span>
@@ -281,7 +339,7 @@ export default function Dashboard({ onExitHome }) {
           </div>
         )}
         {showPopup === "folder" && <FolderPopup folders={folderCards} onClose={() => setShowPopup(null)} onCreate={(folder) => setFolderCards((prev) => [...prev, folder])} />}
-        {showPopup === "file" && <FilePopup folders={folderCards} onClose={() => setShowPopup(null)} onAddFile={(files, folderId) => setFiles((prev) => [...prev, ...files.map((file) => ({ id: file.name + Date.now(), name: file.name, folderId, type: file.name.split(".").pop().toLowerCase(), size: file.size / 1024 / 1024 > 1 ? (file.size / 1024 / 1024).toFixed(1) + " MB" : (file.size / 1024).toFixed(1) + " KB", date: "just now", addedBy: { name: "Sarah Chen", email: "sarah@cortex.io", gradient: "from-blue-500 to-cyan-400" } }))])} />}
+        {showPopup === "file" && <FilePopup folders={folderCards} initialFolder={selectedFolder} onClose={() => setShowPopup(null)} onAddFile={(newFiles) => setFiles((prev) => [...newFiles.map((f, i) => toFileCard(f, prev.length + i)), ...prev])} />}
         {showApiKey && <ApiKeyModal onClose={() => setShowApiKey(false)} />}
       </main>
 
@@ -470,10 +528,11 @@ function FolderTreeNode({ folder, selectedFolder, onSelect }) {
   );
 }
 
-function FolderCard({ folder }) {
+function FolderCard({ folder, fileCount, selected, onSelect }) {
   const updated = folder.updated || (folder.updatedAt ? formatRelativeTime(folder.updatedAt) : "");
   return (
-    <button className="group flex w-full flex-col items-center rounded-xl border border-white/[0.06] bg-[#131b2e] p-4 transition-colors duration-150 hover:bg-[#182032] sm:p-5">
+    <button onClick={onSelect}
+      className={`group flex w-full flex-col items-center rounded-xl border p-4 transition-colors duration-150 sm:p-5 ${selected ? "border-indigo-500/40 bg-[#182032] ring-1 ring-indigo-500/20" : "border-white/[0.06] bg-[#131b2e] hover:bg-[#182032]"}`}>
       <div className="relative mb-3 sm:mb-4">
         {folder.peek === "pdf" && (
           <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a2540] shadow-md">
@@ -502,7 +561,7 @@ function FolderCard({ folder }) {
         <FolderLargeIcon className="h-[50px] w-[50px]" />
       </div>
       <span className="text-[13px] font-medium text-slate-200">{folder.folderName || folder.name}</span>
-      <span className="mt-0.5 text-[11px] text-slate-500">{folder.files ?? 0} Files</span>
+      <span className="mt-0.5 text-[11px] text-slate-500">{fileCount} File{fileCount === 1 ? "" : "s"}</span>
       <span className="mt-1 text-[10px] text-slate-600">{updated}</span>
     </button>
   );

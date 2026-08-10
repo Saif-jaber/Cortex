@@ -2,8 +2,9 @@ import "dotenv/config";
 import express from "express";
 import { sanitize } from "express-mongo-sanitize";
 import connectDB from "./config/db.js";
-import authRoutes from "./routes/auth.js"
-import folderRoutes from "./routes/folder.js"
+import authRoutes from "./routes/auth.js";
+import folderRoutes from "./routes/folder.js";
+import filesRoutes from "./routes/files.js";
 
 const app = express();
 
@@ -25,6 +26,8 @@ connectDB();
 app.use("/api/auth", authRoutes);
 // Folder routes
 app.use("/api/folders", folderRoutes);
+// File routes
+app.use("/api/files", filesRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

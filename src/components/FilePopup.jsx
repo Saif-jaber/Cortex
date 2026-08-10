@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { getUploadUrl, uploadToR2, confirmUpload } from "../services/fileService.js";
+import { useToast } from "../hooks/useToast.jsx";
 
 function folderId(f) {
   return f?._id || f?.id;
@@ -8,14 +10,40 @@ function folderName(f) {
   return f?.folderName || f?.name;
 }
 
-export default function FilePopup({ folders, onClose, onAddFile }) {
+export default function FilePopup({ folders, initialFolder, onClose, onAddFile }) {
+  const toast = useToast();
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [selectedFolder, setSelectedFolder] = useState("");
+  const [selectedFolder, setSelectedFolder] = useState(initialFolder || "");
+  const [uploading, setUploading] = useState(false);
 
-  const handleSubmit = () => {
-    if (selectedFiles.length === 0 || !selectedFolder) return;
-    onAddFile(selectedFiles, selectedFolder);
-    onClose();
+  const handleSubmit = async () => {
+    if (selectedFiles.length === 0 || !selectedFolder || uploading) return;
+    setUploading(true);
+    try {
+      const uploaded = [];
+      for (const file of selectedFiles) {
+        const { uploadUrl, fileKey } = await getUploadUrl({
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+        });
+        await uploadToR2(uploadUrl, file);
+        const saved = await confirmUpload({
+          fileKey,
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          folder: selectedFolder,
+        });
+        uploaded.push(saved);
+      }
+      onAddFile(uploaded);
+      toast.success(`${uploaded.length} file${uploaded.length > 1 ? "s" : ""} uploaded`);
+      onClose();
+    } catch (err) {
+      toast.error(err.message);
+      setUploading(false);
+    }
   };
 
   return (
@@ -79,8 +107,8 @@ export default function FilePopup({ folders, onClose, onAddFile }) {
         </div>
         <div className="flex justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
           <button onClick={onClose} className="rounded-lg px-4 py-2 text-xs font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">Cancel</button>
-          <button onClick={handleSubmit} disabled={selectedFiles.length === 0 || !selectedFolder} className="rounded-lg bg-indigo-500 px-4 py-2 text-xs font-medium text-white transition-all duration-150 hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed">
-            {`Upload ${selectedFiles.length > 0 ? selectedFiles.length : ""}`.trim()}
+          <button onClick={handleSubmit} disabled={selectedFiles.length === 0 || !selectedFolder || uploading} className="rounded-lg bg-indigo-500 px-4 py-2 text-xs font-medium text-white transition-all duration-150 hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed">
+            {uploading ? "Uploading…" : `Upload ${selectedFiles.length > 0 ? selectedFiles.length : ""}`.trim()}
           </button>
         </div>
       </div>
