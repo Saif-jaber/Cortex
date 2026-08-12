@@ -86,7 +86,7 @@ export async function getDownloadUrl(req, res) {
 
 export async function listFiles(req, res) {
   try {
-    const files = await File.find().sort({ createdAt: -1 }).populate("owner", "firstName lastName email");
+    const files = await File.find({ owner: req.user.id }).sort({ createdAt: -1 });
     res.json(files);
   } catch (err) {
     res.status(500).json({ error: err.message });

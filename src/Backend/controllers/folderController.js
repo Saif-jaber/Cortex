@@ -2,7 +2,7 @@ import Folder from "../models/Folder.js"
 // listFolders, createFolder
 export async function listFolders(req, res){
     try {
-        const folders = await Folder.find(); // empty to show all folders
+        const folders = await Folder.find({ owner: req.user.id });
         res.json(folders);
     } catch (err) {
         res.status(500).json({ error: err.message });

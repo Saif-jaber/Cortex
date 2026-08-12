@@ -33,6 +33,7 @@ export default function SignUpModal({ onClose, onSwitchToSignIn }) {
     try { 
       const res = await signupUser({ firstName, lastName, email, password });
       localStorage.setItem("token", res.token);
+      localStorage.setItem("user", JSON.stringify(res.user));
       setSuccess(true);
     } 
     catch (error) {

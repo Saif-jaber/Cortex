@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import SignInModal from "./SignInModal";
 import SignUpModal from "./SignUpModal";
 import { ArrowRightIcon, GitHubIcon, XIcon } from "./icons";
@@ -114,12 +114,21 @@ export default function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const openSignIn = () => setShowSignIn(true);
   const openSignUp = () => setShowSignUp(true);
 
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 600);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="min-h-screen overflow-x-clip bg-[#0a0e1a] font-sans text-slate-300 antialiased">
+      <ScrollToTopButton visible={showScrollTop} />
       <Nav menuOpen={menuOpen} setMenuOpen={setMenuOpen} onSignIn={openSignIn} onSignUp={openSignUp} />
       <Hero onSignUp={openSignUp} />
       <LogoCloud />
@@ -244,6 +253,25 @@ function Nav({ menuOpen, setMenuOpen, onSignIn, onSignUp }) {
         </div>
       )}
     </header>
+  );
+}
+
+/* ─── Scroll to top ──────────────────────────────────────────── */
+
+function ScrollToTopButton({ visible }) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      aria-label="Scroll to top"
+      aria-hidden={!visible}
+      tabIndex={visible ? 0 : -1}
+      className={`fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.12] bg-ink-700/90 text-slate-200 shadow-xl shadow-black/40 backdrop-blur-md transition-all duration-300 hover:bg-ink-600 hover:text-white ${
+        visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
+      }`}
+    >
+      <ArrowUpIcon className="h-5 w-5" />
+    </button>
   );
 }
 
@@ -1357,6 +1385,15 @@ function ChevronDownIcon({ className }) {
   return (
     <Svg className={className} sw={1.8}>
       <polyline points="6 9 12 15 18 9" />
+    </Svg>
+  );
+}
+
+function ArrowUpIcon({ className }) {
+  return (
+    <Svg className={className} sw={2}>
+      <line x1="12" y1="19" x2="12" y2="5" />
+      <polyline points="5 12 12 5 19 12" />
     </Svg>
   );
 }

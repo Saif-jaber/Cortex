@@ -18,6 +18,7 @@ export default function SignInModal({ onClose, onSwitchToSignUp }) {
     try { 
       const res = await loginUser({ email, password });
       localStorage.setItem("token", res.token);
+      localStorage.setItem("user", JSON.stringify(res.user));
       setSuccess(true);
     } 
     catch (error) {

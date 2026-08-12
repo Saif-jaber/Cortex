@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { useToast } from "../hooks/useToast.jsx";
 
-const DEFAULT_USER = {
-  firstName: "Sarah",
-  lastName: "Chen",
-  email: "sarah@cortex.io",
-  role: "Admin",
-};
+const DEFAULT_USER = { firstName: "", lastName: "", email: "", role: "" };
 
 function loadUser() {
   try {
@@ -18,7 +13,7 @@ function loadUser() {
 }
 
 function initials(user) {
-  return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "SC";
+  return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "U";
 }
 
 export default function ProfilePage({ foldersCount = 0, filesCount = 0, onOpenApiKey, onExitHome }) {
@@ -50,7 +45,6 @@ export default function ProfilePage({ foldersCount = 0, filesCount = 0, onOpenAp
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-xl font-semibold text-slate-100">{profile.firstName} {profile.lastName}</h1>
-              <span className="rounded-full bg-indigo-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-300 ring-1 ring-indigo-500/20">{profile.role}</span>
             </div>
             <p className="mt-1 text-sm text-slate-400">{profile.email}</p>
             <p className="mt-2 text-xs leading-relaxed text-slate-500">Manage your account details and security settings.</p>
@@ -76,9 +70,6 @@ export default function ProfilePage({ foldersCount = 0, filesCount = 0, onOpenAp
             </Field>
             <Field label="Email address">
               <input type="email" value={profile.email} onChange={setField("email")} className={inputCls} />
-            </Field>
-            <Field label="Role">
-              <div className="flex h-10 items-center rounded-lg bg-white/[0.04] px-3 text-sm text-slate-400 ring-1 ring-white/[0.06]">{profile.role}</div>
             </Field>
           </div>
           <div className="mt-5 flex justify-end">

@@ -41,8 +41,6 @@ function formatRelativeTime(date) {
   return new Date(date).toLocaleDateString();
 }
 
-const GRADIENTS = ["from-blue-500 to-cyan-400", "from-violet-500 to-fuchsia-400", "from-emerald-500 to-teal-400", "from-rose-500 to-orange-400"];
-
 function fileType(fileType) {
   if (!fileType) return "pdf";
   if (fileType.includes("pdf")) return "pdf";
@@ -61,8 +59,7 @@ function formatFileSize(bytes) {
   return (bytes / 1024).toFixed(1) + " KB";
 }
 
-function toFileCard(f, index) {
-  const owner = f.owner || {};
+function toFileCard(f) {
   return {
     id: fileId(f),
     name: f.fileName || f.name,
@@ -70,11 +67,6 @@ function toFileCard(f, index) {
     size: formatFileSize(f.fileSize ?? f.size),
     date: formatRelativeTime(f.createdAt || f.date),
     folder: f.folder || null,
-    addedBy: {
-      name: owner.firstName ? `${owner.firstName} ${owner.lastName || ""}`.trim() : "Unknown",
-      email: owner.email || "",
-      gradient: GRADIENTS[(index || 0) % GRADIENTS.length],
-    },
   };
 }
 export default function Dashboard({ onExitHome }) {
@@ -90,6 +82,13 @@ export default function Dashboard({ onExitHome }) {
   const [showApiKey, setShowApiKey] = useState(false);
   const [folderCards, setFolderCards] = useState([]);
   const [files, setFiles] = useState([]);
+  const user = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user")) || {};
+    } catch {
+      return {};
+    }
+  })();
 
   useEffect(() => {
     let cancelled = false;
@@ -97,7 +96,7 @@ export default function Dashboard({ onExitHome }) {
       .then((folders) => { if (!cancelled) setFolderCards(folders); })
       .catch(() => {});
     listFiles()
-      .then((files) => { if (!cancelled) setFiles(files.map((f, i) => toFileCard(f, i))); })
+      .then((files) => { if (!cancelled) setFiles(files.map((f) => toFileCard(f))); })
       .catch(() => {});
     return () => { cancelled = true; };
    }, []);
@@ -217,17 +216,15 @@ export default function Dashboard({ onExitHome }) {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <button aria-label="Notifications" className="relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
-              <BellIcon className="h-4 w-4" />
-              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-indigo-400 ring-2 ring-[#0f1525]" />
-            </button>
             <button aria-label="Settings" className="hidden h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200 sm:flex">
               <SettingsIcon className="h-4 w-4" />
             </button>
             <div className="mx-1 hidden h-5 w-px bg-white/[0.08] sm:block" />
             <button className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 transition-all duration-150 hover:bg-white/[0.06]">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-[11px] font-bold text-white shadow-lg shadow-indigo-500/20">SC</div>
-              <span className="text-xs font-medium text-slate-300 hidden md:block">Sarah</span>
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-[11px] font-bold text-white shadow-lg shadow-indigo-500/20">
+                {`${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "U"}
+              </div>
+              <span className="text-xs font-medium text-slate-300 hidden md:block">{user.firstName || "User"}</span>
             </button>
           </div>
         </div>
@@ -301,35 +298,25 @@ export default function Dashboard({ onExitHome }) {
                           <p className="truncate text-sm font-medium text-slate-200">{file.name}</p>
                           <p className="mt-0.5 text-xs text-slate-500">{file.size} · {file.date}</p>
                         </div>
-                        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${file.addedBy.gradient} text-[9px] font-bold text-white shadow-sm`}>
-                          {file.addedBy.name.split(" ").map((n) => n[0]).join("")}
-                        </div>
                       </div>
                     ))}
                   </div>
 
                   <div className="hidden overflow-x-auto rounded-xl border border-white/[0.06] bg-[#131b2e] md:block">
-                    <div className="grid grid-cols-[1fr_auto_auto_auto] items-center border-b border-white/[0.06] px-5 py-3">
+                    <div className="grid grid-cols-[1fr_auto_auto] items-center border-b border-white/[0.06] px-5 py-3">
                       <span className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Name</span>
                       <span className="w-24 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Size</span>
                       <span className="w-20 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Date</span>
-                      <span className="w-28 sm:w-44 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Added By</span>
                     </div>
                     {visibleFiles.map((file, i) => (
                       <div key={file.id}
-                        className={`group grid grid-cols-[1fr_auto_auto_auto] items-center px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03] ${i < visibleFiles.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
+                        className={`group grid grid-cols-[1fr_auto_auto] items-center px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03] ${i < visibleFiles.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
                         <div className="flex items-center gap-3 min-w-0">
                           <FileTypeIcon type={file.type} />
                           <span className="truncate text-sm font-medium text-slate-200 group-hover:text-slate-100 transition-colors">{file.name}</span>
                         </div>
                         <span className="w-24 text-right text-xs text-slate-500">{file.size}</span>
                         <span className="w-20 text-right text-xs text-slate-500">{file.date}</span>
-                        <div className="flex w-28 sm:w-44 items-center justify-end gap-2.5">
-                          <div className={`flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br ${file.addedBy.gradient} text-[9px] font-bold text-white shadow-sm`}>
-                            {file.addedBy.name.split(" ").map((n) => n[0]).join("")}
-                          </div>
-                          <span className="hidden sm:block text-xs text-slate-400">{file.addedBy.email}</span>
-                        </div>
                       </div>
                     ))}
                   </div>
@@ -339,7 +326,7 @@ export default function Dashboard({ onExitHome }) {
           </div>
         )}
         {showPopup === "folder" && <FolderPopup folders={folderCards} onClose={() => setShowPopup(null)} onCreate={(folder) => setFolderCards((prev) => [...prev, folder])} />}
-        {showPopup === "file" && <FilePopup folders={folderCards} initialFolder={selectedFolder} onClose={() => setShowPopup(null)} onAddFile={(newFiles) => setFiles((prev) => [...newFiles.map((f, i) => toFileCard(f, prev.length + i)), ...prev])} />}
+        {showPopup === "file" && <FilePopup folders={folderCards} initialFolder={selectedFolder} onClose={() => setShowPopup(null)} onAddFile={(newFiles) => setFiles((prev) => [...newFiles.map((f) => toFileCard(f)), ...prev])} />}
         {showApiKey && <ApiKeyModal onClose={() => setShowApiKey(false)} />}
       </main>
 
@@ -671,15 +658,6 @@ function KeyIcon({ className }) {
       <path d="M10.7 12.3L21 2" />
       <path d="M17 6l3 3" />
       <path d="M13.5 9.5l2.5 2.5" />
-    </svg>
-  );
-}
-
-function BellIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 01-3.46 0" />
     </svg>
   );
 }
