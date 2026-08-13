@@ -19,8 +19,11 @@
     "express": "^5.2.1",
     "express-mongo-sanitize": "^2.2.0",
     "jsonwebtoken": "^9.0.3",
+    "jszip": "^3.10.1",
+    "mammoth": "^1.12.1",
     "mongoose": "^9.9.1",
     "multer": "^2.2.0",
+    "pdf-parse": "^2.4.5",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tailwindcss": "^4.3.3"

@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import folderRoutes from "./routes/folder.js";
 import filesRoutes from "./routes/files.js";
+import chatRoutes from "./routes/chat.js";
 
 const app = express();
 
@@ -28,6 +29,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/folders", folderRoutes);
 // File routes
 app.use("/api/files", filesRoutes);
+// Chat routes
+app.use("/api/chat", chatRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

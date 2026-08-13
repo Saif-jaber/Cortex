@@ -4,6 +4,7 @@ import FilePopup from "./FilePopup";
 import ProfilePage from "./ProfilePage";
 import { listFolders } from "../services/folderService.js"
 import { listFiles } from "../services/fileService.js"
+import { askAI } from "../services/chatService.js"
 
 const NAV_ITEMS = [
   { id: "knowledge", label: "Knowledge Base", mobile: "Knowledge", icon: DatabaseIcon },
@@ -102,6 +103,19 @@ export default function Dashboard({ onExitHome }) {
    }, []);
 
   useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!sidebarOpen) return;
     const onKey = (e) => {
       if (e.key === "Escape") setSidebarOpen(false);
@@ -127,7 +141,7 @@ export default function Dashboard({ onExitHome }) {
     : files;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#0a0e1a] font-sans text-slate-100">
+    <div className="flex h-dvh w-full overflow-hidden bg-[#0a0e1a] font-sans text-slate-100">
       {/* Left Icon Rail */}
       <aside className="relative hidden w-14 shrink-0 flex-col items-center border-r border-white/[0.06] bg-[#0d1220] py-5 md:flex sm:w-16">
         <div className="mb-8 flex h-10 w-10 items-center justify-center">
@@ -861,18 +875,6 @@ function formatTime(d) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function demoBotReply() {
-  return {
-    role: "bot",
-    time: formatTime(new Date()),
-    sources: [
-      { type: "word", name: "onboarding-guide.docx" },
-      { type: "pdf", name: "team-standup-notes.pdf" },
-    ],
-    text: "Good question! Here's what I found across your knowledge base:\n\n**Onboarding flow**\n- The current flow has 4 steps: account setup, profile, team invite, and product tour.\n- Users who skip the product tour are 32% less likely to activate within the first week.\n- Two documents reference your email drip cadence, worth aligning the copy.\n\nWant me to draft a revised onboarding sequence or summarize these files?",
-  };
-}
-
 function renderInline(text) {
   return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
@@ -1022,24 +1024,64 @@ function WelcomeState({ onPick }) {
 
 function ChatPage({ messages, setMessages, chatInput, setChatInput }) {
   const [isTyping, setIsTyping] = useState(false);
+  const [statusText, setStatusText] = useState("");
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    const el = scrollRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+    if (nearBottom) el.scrollTop = el.scrollHeight;
   }, [messages, isTyping]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!chatInput.trim() || isTyping) return;
     const text = chatInput.trim();
     setMessages((prev) => [...prev, { role: "user", text, time: formatTime(new Date()) }]);
     setChatInput("");
     setIsTyping(true);
-    setTimeout(() => {
-      setMessages((prev) => [...prev, demoBotReply()]);
-      setIsTyping(false);
-    }, 900);
+    setStatusText("");
+
+    let answer = "";
+    let sources = [];
+    let failed = null;
+
+    try {
+      await askAI(text, {
+        onStatus: (msg) => setStatusText(msg),
+        onDelta: (t) => {
+          answer += t;
+          setMessages((prev) => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            if (last?.role === "bot" && last.streaming) {
+              next[next.length - 1] = { ...last, text: answer };
+            } else {
+              next.push({ role: "bot", text: answer, time: formatTime(new Date()), streaming: true });
+            }
+            return next;
+          });
+        },
+        onSources: (s) => { sources = s; },
+        onError: (msg) => { failed = msg; },
+      });
+    } catch (err) {
+      failed = err.message;
+    }
+
+    setMessages((prev) => {
+      const next = [...prev];
+      const last = next[next.length - 1];
+      if (last?.role === "bot" && last.streaming) {
+        next[next.length - 1] = { ...last, streaming: false, text: answer || "No response generated.", sources };
+      } else if (failed && !answer) {
+        next.push({ role: "bot", text: `Error: ${failed}`, time: formatTime(new Date()) });
+      }
+      return next;
+    });
+
+    setStatusText("");
+    setIsTyping(false);
   };
 
   const handleKeyDown = (e) => {
@@ -1053,14 +1095,15 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput }) {
 
   return (
     <div className="flex flex-1 flex-col min-h-0 pb-[calc(env(safe-area-inset-bottom)+3.5rem)] md:pb-0">
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain [scroll-behavior:auto]">
         <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6">
           {isFresh ? (
             <WelcomeState onPick={(s) => setChatInput(s)} />
           ) : (
             messages.map((msg, i) => <Message key={i} msg={msg} />)
           )}
-          {isTyping && <TypingIndicator />}
+          {isTyping && !messages.some((m) => m.streaming) && <TypingIndicator />}
+          {statusText && <p className="pb-1 text-center text-xs text-slate-500">{statusText}</p>}
         </div>
       </div>
 
