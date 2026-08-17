@@ -3,6 +3,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomBytes } from "crypto";
 import { r2 } from "../config/r2.js";
 import File from "../models/File.js";
+import FileChunk from "../models/FileChunk.js";
 
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -103,6 +104,7 @@ export async function deleteFile(req, res) {
       Key: file.fileKey,
     }));
 
+    await FileChunk.deleteMany({ file: file._id });
     await file.deleteOne();
     res.json({ message: "File deleted" });
   } catch (err) {

@@ -3,22 +3,15 @@ import FolderPopup from "./FolderPopup";
 import FilePopup from "./FilePopup";
 import ProfilePage from "./ProfilePage";
 import { listFolders } from "../services/folderService.js"
-import { listFiles } from "../services/fileService.js"
-import { askAI } from "../services/chatService.js"
+import { deleteFolder } from "../services/folderService.js"
+import { listFiles, deleteFile } from "../services/fileService.js"
+import { askAI, listChats, getChat, deleteChat } from "../services/chatService.js"
 
 const NAV_ITEMS = [
   { id: "knowledge", label: "Knowledge Base", mobile: "Knowledge", icon: DatabaseIcon },
   { id: "chat", label: "AI Chat", mobile: "Chat", icon: ChatIcon },
   { id: "analytics", label: "Analytics", mobile: "Analytics", icon: AnalyticsIcon },
   { id: "profile", label: "Profile", mobile: "Profile", icon: ProfileIcon },
-];
-
-const CHAT_HISTORY = [
-  { id: 1, title: "Onboarding flow improvements", snippet: "How should we structure the new user onboarding...", time: "2h ago" },
-  { id: 2, title: "Product spec questions", snippet: "What edge cases should the file uploader handle...", time: "5h ago" },
-  { id: 3, title: "API integration guide", snippet: "Can you summarize the auth middleware flow...", time: "1d ago" },
-  { id: 4, title: "Interview prep", snippet: "Generate 5 questions for a senior frontend role...", time: "2d ago" },
-  { id: 5, title: "Design system tokens", snippet: "Compare our spacing scale to Tailwind's default...", time: "3d ago" },
 ];
 
 function folderId(f) {
@@ -79,10 +72,13 @@ export default function Dashboard({ onExitHome }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
+  const [activeChatId, setActiveChatId] = useState(null);
+  const [chatSessions, setChatSessions] = useState([]);
   const [showPopup, setShowPopup] = useState(null);
   const [showApiKey, setShowApiKey] = useState(false);
   const [folderCards, setFolderCards] = useState([]);
   const [files, setFiles] = useState([]);
+  const [confirmDialog, setConfirmDialog] = useState(null);
   const user = (() => {
     try {
       return JSON.parse(localStorage.getItem("user")) || {};
@@ -129,6 +125,94 @@ export default function Dashboard({ onExitHome }) {
     setSidebarOpen(false);
   };
 
+  async function handleDeleteFile(e, file) {
+    e.stopPropagation();
+    setConfirmDialog({
+      title: "Delete file",
+      message: `Delete "${file.name}"? This cannot be undone.`,
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await deleteFile(file.id);
+          setFiles((prev) => prev.filter((f) => f.id !== file.id));
+        } catch (err) {
+          setConfirmDialog({ title: "Error", message: err.message, variant: "error", onConfirm: null });
+        }
+      },
+    });
+  }
+
+  async function handleDeleteFolder(e, folder) {
+    e.stopPropagation();
+    const name = folder.folderName || folder.name;
+    setConfirmDialog({
+      title: "Delete folder",
+      message: `Delete "${name}" and all its files? This cannot be undone.`,
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await deleteFolder(folderId(folder));
+          setFolderCards((prev) => prev.filter((f) => folderId(f) !== folderId(folder)));
+          setFiles((prev) => prev.filter((f) => f.folder !== folderId(folder)));
+          if (selectedFolder === folderId(folder)) setSelectedFolder(null);
+        } catch (err) {
+          setConfirmDialog({ title: "Error", message: err.message, variant: "error", onConfirm: null });
+        }
+      },
+    });
+  }
+
+  useEffect(() => {
+    if (activeNav !== "chat") return;
+    listChats()
+      .then((chats) => setChatSessions(chats))
+      .catch(() => {});
+  }, [activeNav]);
+
+  async function handleNewChat() {
+    setMessages([]);
+    setActiveChatId(null);
+    setChatInput("");
+  }
+
+  async function handleSelectChat(chatId) {
+    try {
+      setMessages([]);
+      setActiveChatId(chatId);
+      setSidebarOpen(false);
+      const chatDoc = await getChat(chatId);
+      const loaded = [];
+      for (const m of chatDoc.messages) {
+        const role = m.role === "assistant" ? "bot" : "user";
+        loaded.push({ role, text: m.content, time: formatTime(new Date(m.createdAt)), ...(role === "bot" ? { sources: m.sources || [] } : {}) });
+      }
+      setMessages(loaded);
+    } catch (err) {
+      console.error("Failed to load chat:", err);
+    }
+  }
+
+  async function handleDeleteChat(e, chatId) {
+    e.stopPropagation();
+    setConfirmDialog({
+      title: "Delete chat",
+      message: "Delete this conversation? This cannot be undone.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await deleteChat(chatId);
+          setChatSessions((prev) => prev.filter((c) => c._id !== chatId));
+          if (activeChatId === chatId) {
+            setActiveChatId(null);
+            setMessages([]);
+          }
+        } catch (err) {
+          setConfirmDialog({ title: "Error", message: err.message, variant: "error", onConfirm: null });
+        }
+      },
+    });
+  }
+
   const selectedFolderName = folderName(folderCards.find((f) => folderId(f) === selectedFolder)) || "All Folders";
 
   const filesByFolder = files.reduce((acc, f) => {
@@ -170,7 +254,9 @@ export default function Dashboard({ onExitHome }) {
       {/* Second Sidebar */}
       <aside className="hidden w-[280px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0d1220] lg:flex">
         {activeNav === "chat" ? (
-          <ChatSidebarPanel closeButton={null} onOpenApiKey={() => setShowApiKey(true)} />
+          <ChatSidebarPanel closeButton={null} onOpenApiKey={() => setShowApiKey(true)}
+            chats={chatSessions} activeChatId={activeChatId} onSelectChat={handleSelectChat}
+            onNewChat={handleNewChat} onDeleteChat={handleDeleteChat} />
         ) : (
           <SidebarPanel
             closeButton={null}
@@ -244,7 +330,8 @@ export default function Dashboard({ onExitHome }) {
         </div>
 
         {activeNav === "chat" ? (
-          <ChatPage messages={messages} setMessages={setMessages} chatInput={chatInput} setChatInput={setChatInput} />
+          <ChatPage messages={messages} setMessages={setMessages} chatInput={chatInput} setChatInput={setChatInput}
+            activeChatId={activeChatId} setActiveChatId={setActiveChatId} setChatSessions={setChatSessions} />
         ) : activeNav === "profile" ? (
           <ProfilePage
             foldersCount={folderCards.length}
@@ -272,7 +359,7 @@ export default function Dashboard({ onExitHome }) {
               ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
                   {folderCards.map((folder) => (
-                    <FolderCard key={folderId(folder)} folder={folder} fileCount={filesByFolder[folderId(folder)] || 0} selected={selectedFolder === folderId(folder)} onSelect={() => handleSelectFolder(folderId(folder))} />
+                    <FolderCard key={folderId(folder)} folder={folder} fileCount={filesByFolder[folderId(folder)] || 0} selected={selectedFolder === folderId(folder)} onSelect={() => handleSelectFolder(folderId(folder))} onDelete={handleDeleteFolder} />
                   ))}
                 </div>
               )}
@@ -312,25 +399,34 @@ export default function Dashboard({ onExitHome }) {
                           <p className="truncate text-sm font-medium text-slate-200">{file.name}</p>
                           <p className="mt-0.5 text-xs text-slate-500">{file.size} · {file.date}</p>
                         </div>
+                        <button onClick={(e) => handleDeleteFile(e, file)} aria-label={`Delete ${file.name}`}
+                          className="shrink-0 rounded-lg p-1.5 text-slate-600 transition-colors duration-150 hover:bg-red-500/10 hover:text-red-400">
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
                       </div>
                     ))}
                   </div>
 
                   <div className="hidden overflow-x-auto rounded-xl border border-white/[0.06] bg-[#131b2e] md:block">
-                    <div className="grid grid-cols-[1fr_auto_auto] items-center border-b border-white/[0.06] px-5 py-3">
+                    <div className="grid grid-cols-[1fr_auto_auto_auto] items-center border-b border-white/[0.06] px-5 py-3">
                       <span className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Name</span>
                       <span className="w-24 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Size</span>
                       <span className="w-20 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Date</span>
+                      <span className="w-10" />
                     </div>
                     {visibleFiles.map((file, i) => (
                       <div key={file.id}
-                        className={`group grid grid-cols-[1fr_auto_auto] items-center px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03] ${i < visibleFiles.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
+                        className={`group grid grid-cols-[1fr_auto_auto_auto] items-center px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03] ${i < visibleFiles.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
                         <div className="flex items-center gap-3 min-w-0">
                           <FileTypeIcon type={file.type} />
                           <span className="truncate text-sm font-medium text-slate-200 group-hover:text-slate-100 transition-colors">{file.name}</span>
                         </div>
                         <span className="w-24 text-right text-xs text-slate-500">{file.size}</span>
                         <span className="w-20 text-right text-xs text-slate-500">{file.date}</span>
+                        <button onClick={(e) => handleDeleteFile(e, file)} aria-label={`Delete ${file.name}`}
+                          className="w-10 flex justify-end text-slate-600 opacity-0 transition-all duration-150 group-hover:opacity-100 hover:text-red-400">
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -342,6 +438,15 @@ export default function Dashboard({ onExitHome }) {
         {showPopup === "folder" && <FolderPopup folders={folderCards} onClose={() => setShowPopup(null)} onCreate={(folder) => setFolderCards((prev) => [...prev, folder])} />}
         {showPopup === "file" && <FilePopup folders={folderCards} initialFolder={selectedFolder} onClose={() => setShowPopup(null)} onAddFile={(newFiles) => setFiles((prev) => [...newFiles.map((f) => toFileCard(f)), ...prev])} />}
         {showApiKey && <ApiKeyModal onClose={() => setShowApiKey(false)} />}
+        {confirmDialog && (
+          <ConfirmDialog
+            title={confirmDialog.title}
+            message={confirmDialog.message}
+            variant={confirmDialog.variant}
+            onConfirm={confirmDialog.onConfirm}
+            onClose={() => setConfirmDialog(null)}
+          />
+        )}
       </main>
 
       {/* Mobile / Tablet Sidebar Drawer */}
@@ -356,7 +461,7 @@ export default function Dashboard({ onExitHome }) {
             <ChatSidebarPanel
               closeButton={
                 <button onClick={() => setSidebarOpen(false)} aria-label="Close navigation"
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-200">
                   <XIcon className="h-4 w-4" />
                 </button>
               }
@@ -364,6 +469,8 @@ export default function Dashboard({ onExitHome }) {
                 setShowApiKey(true);
                 setSidebarOpen(false);
               }}
+              chats={chatSessions} activeChatId={activeChatId} onSelectChat={handleSelectChat}
+              onNewChat={handleNewChat} onDeleteChat={handleDeleteChat}
             />
           ) : (
             <SidebarPanel
@@ -443,23 +550,27 @@ function SidebarPanel({ closeButton, activeTab, setActiveTab, searchQuery, setSe
       <div className="flex-1 overflow-y-auto px-3 pb-4">
         {folders.length === 0 ? (
           <p className="px-2 py-8 text-center text-xs text-slate-500">No folders yet</p>
-        ) : (
-          folders.map((folder) => (
-            <FolderTreeNode key={folderId(folder)} folder={folder} selectedFolder={selectedFolder} onSelect={onSelect} />
-          ))
-        )}
+        ) : (() => {
+          const q = searchQuery.toLowerCase().trim();
+          const filtered = q ? folders.filter((f) => folderName(f).toLowerCase().includes(q)) : folders;
+          return filtered.length === 0 ? (
+            <p className="px-2 py-8 text-center text-xs text-slate-500">No matching folders</p>
+          ) : (
+            filtered.map((folder) => (
+              <FolderTreeNode key={folderId(folder)} folder={folder} selectedFolder={selectedFolder} onSelect={onSelect} />
+            ))
+          );
+        })()}
       </div>
     </>
   );
 }
 
-function ChatSidebarPanel({ closeButton, onOpenApiKey }) {
+function ChatSidebarPanel({ closeButton, onOpenApiKey, chats, activeChatId, onSelectChat, onNewChat, onDeleteChat }) {
   const [query, setQuery] = useState("");
 
-  const filtered = CHAT_HISTORY.filter(
-    (chat) =>
-      chat.title.toLowerCase().includes(query.toLowerCase()) ||
-      chat.snippet.toLowerCase().includes(query.toLowerCase())
+  const filtered = chats.filter(
+    (chat) => chat.title.toLowerCase().includes(query.toLowerCase())
   );
 
   return (
@@ -467,7 +578,7 @@ function ChatSidebarPanel({ closeButton, onOpenApiKey }) {
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <h2 className="text-sm font-semibold text-slate-200">Chats</h2>
         <div className="flex items-center gap-0.5">
-          <button aria-label="New chat" title="New chat" className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
+          <button onClick={onNewChat} aria-label="New chat" title="New chat" className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
             <PlusIcon className="h-4 w-4" />
           </button>
           {closeButton}
@@ -485,19 +596,22 @@ function ChatSidebarPanel({ closeButton, onOpenApiKey }) {
       <div className="flex-1 overflow-y-auto px-3 pb-4">
         <p className="px-2 pb-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Recent</p>
         {filtered.length === 0 ? (
-          <p className="px-2 py-6 text-center text-xs text-slate-500">No chats found</p>
+          <p className="px-2 py-6 text-center text-xs text-slate-500">{chats.length === 0 ? "No chats yet" : "No matching chats"}</p>
         ) : (
           filtered.map((chat) => (
-            <button key={chat.id} className="group flex w-full items-start gap-2.5 rounded-lg px-2 py-2.5 text-left transition-all duration-150 hover:bg-white/[0.04]">
-              <ChatIcon className="mt-0.5 h-4 w-4 shrink-0 text-slate-600 group-hover:text-slate-400" strokeWidth={1.8} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-[13px] font-medium text-slate-200 group-hover:text-slate-100">{chat.title}</span>
-                  <span className="shrink-0 text-[10px] text-slate-500">{chat.time}</span>
+            <div key={chat._id} className="group relative">
+              <button onClick={() => onSelectChat(chat._id)}
+                className={`flex w-full items-start gap-2.5 rounded-lg px-2 py-2.5 text-left transition-all duration-150 ${activeChatId === chat._id ? "bg-white/[0.07] text-slate-100" : "hover:bg-white/[0.04]"}`}>
+                <ChatIcon className={`mt-0.5 h-4 w-4 shrink-0 ${activeChatId === chat._id ? "text-indigo-400" : "text-slate-600 group-hover:text-slate-400"}`} strokeWidth={1.8} />
+                <div className="min-w-0 max-w-[calc(100%-2rem)] flex-1">
+                  <span className={`block truncate text-[13px] font-medium ${activeChatId === chat._id ? "text-slate-100" : "text-slate-200 group-hover:text-slate-100"}`}>{chat.title}</span>
                 </div>
-                <p className="mt-0.5 truncate text-xs text-slate-500">{chat.snippet}</p>
-              </div>
-            </button>
+              </button>
+              <button onClick={(e) => onDeleteChat(e, chat._id)} aria-label="Delete chat"
+                className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-600 opacity-0 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100">
+                <TrashIcon className="h-3.5 w-3.5" />
+              </button>
+            </div>
           ))
         )}
       </div>
@@ -529,42 +643,114 @@ function FolderTreeNode({ folder, selectedFolder, onSelect }) {
   );
 }
 
-function FolderCard({ folder, fileCount, selected, onSelect }) {
+function FolderCard({ folder, fileCount, selected, onSelect, onDelete }) {
   const updated = folder.updated || (folder.updatedAt ? formatRelativeTime(folder.updatedAt) : "");
   return (
-    <button onClick={onSelect}
-      className={`group flex w-full flex-col items-center rounded-xl border p-4 transition-colors duration-150 sm:p-5 ${selected ? "border-indigo-500/40 bg-[#182032] ring-1 ring-indigo-500/20" : "border-white/[0.06] bg-[#131b2e] hover:bg-[#182032]"}`}>
-      <div className="relative mb-3 sm:mb-4">
-        {folder.peek === "pdf" && (
-          <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a2540] shadow-md">
-            <svg className="h-3.5 w-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
-            </svg>
+    <div className="group relative">
+      <button onClick={onSelect}
+        className={`flex w-full flex-col items-center rounded-xl border p-4 transition-colors duration-150 sm:p-5 ${selected ? "border-indigo-500/40 bg-[#182032] ring-1 ring-indigo-500/20" : "border-white/[0.06] bg-[#131b2e] hover:bg-[#182032]"}`}>
+        <div className="relative mb-3 sm:mb-4">
+          {folder.peek === "pdf" && (
+            <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a2540] shadow-md">
+              <svg className="h-3.5 w-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+            </div>
+          )}
+          {folder.peek === "doc" && (
+            <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a2540] shadow-md">
+              <svg className="h-3.5 w-3.5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+                <path d="M8 13h2" /><path d="M8 17h6" />
+              </svg>
+            </div>
+          )}
+          {folder.peek === "figma" && (
+            <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a2540] shadow-md">
+              <svg className="h-3.5 w-3.5 text-pink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2a3 3 0 00-3 3v4a3 3 0 006 0V5a3 3 0 00-3-3z" />
+              </svg>
+            </div>
+          )}
+          <FolderLargeIcon className="h-[50px] w-[50px]" />
+        </div>
+        <span className="text-[13px] font-medium text-slate-200">{folder.folderName || folder.name}</span>
+        <span className="mt-0.5 text-[11px] text-slate-500">{fileCount} File{fileCount === 1 ? "" : "s"}</span>
+        <span className="mt-1 text-[10px] text-slate-600">{updated}</span>
+      </button>
+      {onDelete && (
+        <button onClick={(e) => onDelete(e, folder)} aria-label={`Delete ${folder.folderName || folder.name}`}
+          className="absolute right-2 top-2 rounded-lg p-1.5 text-slate-600 opacity-0 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100">
+          <TrashIcon className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ConfirmDialog({ title, message, variant, onConfirm, onClose }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleConfirm() {
+    if (!onConfirm) return;
+    setLoading(true);
+    try {
+      await onConfirm();
+      onClose();
+    } catch {
+      onClose();
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-white/[0.1] bg-[#131b2e] shadow-2xl shadow-black/60">
+        <div className="px-5 pt-5 pb-0">
+          <div className="flex items-center gap-3">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${variant === "error" ? "bg-red-500/10" : "bg-red-500/10"}`}>
+              {variant === "error" ? (
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                  <path d="M10 11v6" /><path d="M14 11v6" />
+                  <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+                </svg>
+              )}
+            </div>
+            <div>
+              <h3 className="text-[15px] font-semibold text-slate-100">{title}</h3>
+              <p className="mt-0.5 text-sm text-slate-400">{message}</p>
+            </div>
           </div>
-        )}
-        {folder.peek === "doc" && (
-          <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a2540] shadow-md">
-            <svg className="h-3.5 w-3.5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
-              <path d="M8 13h2" /><path d="M8 17h6" />
-            </svg>
-          </div>
-        )}
-        {folder.peek === "figma" && (
-          <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a2540] shadow-md">
-            <svg className="h-3.5 w-3.5 text-pink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 2a3 3 0 00-3 3v4a3 3 0 006 0V5a3 3 0 00-3-3z" />
-            </svg>
-          </div>
-        )}
-        <FolderLargeIcon className="h-[50px] w-[50px]" />
+        </div>
+        <div className="flex justify-end gap-2 px-5 py-4">
+          {onConfirm && (
+            <button onClick={onClose}
+              className="rounded-lg px-3.5 py-1.5 text-sm font-medium text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-slate-200">
+              Cancel
+            </button>
+          )}
+          {onConfirm ? (
+            <button onClick={handleConfirm} disabled={loading}
+              className="rounded-lg bg-red-500/90 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:opacity-50">
+              {loading ? "Deleting..." : "Delete"}
+            </button>
+          ) : (
+            <button onClick={onClose}
+              className="rounded-lg bg-white/[0.08] px-3.5 py-1.5 text-sm font-medium text-slate-200 transition-colors hover:bg-white/[0.12]">
+              OK
+            </button>
+          )}
+        </div>
       </div>
-      <span className="text-[13px] font-medium text-slate-200">{folder.folderName || folder.name}</span>
-      <span className="mt-0.5 text-[11px] text-slate-500">{fileCount} File{fileCount === 1 ? "" : "s"}</span>
-      <span className="mt-1 text-[10px] text-slate-600">{updated}</span>
-    </button>
+    </div>
   );
 }
 
@@ -716,6 +902,17 @@ function CheckIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function TrashIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+      <path d="M10 11v6" /><path d="M14 11v6" />
+      <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
     </svg>
   );
 }
@@ -876,12 +1073,19 @@ function formatTime(d) {
 }
 
 function renderInline(text) {
-  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part, i) => {
+  return text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g).map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
         <strong key={i} className="font-semibold text-slate-100">
           {part.slice(2, -2)}
         </strong>
+      );
+    }
+    if (part.startsWith("*") && part.endsWith("*") && !part.startsWith("**")) {
+      return (
+        <em key={i} className="italic text-slate-300">
+          {part.slice(1, -1)}
+        </em>
       );
     }
     if (part.startsWith("`") && part.endsWith("`")) {
@@ -891,28 +1095,296 @@ function renderInline(text) {
         </code>
       );
     }
+    if (part.startsWith("[") && part.includes("](")) {
+      const match = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+      if (match) {
+        return (
+          <a key={i} href={match[2]} target="_blank" rel="noopener noreferrer"
+            className="text-indigo-400 underline decoration-indigo-400/30 underline-offset-2 transition-colors hover:text-indigo-300 hover:decoration-indigo-300/50">
+            {match[1]}
+          </a>
+        );
+      }
+    }
     return part;
   });
 }
 
-function renderMessageText(text) {
-  return text.split("\n").map((line, i) => {
-    const trimmed = line.trim();
-    if (trimmed.startsWith("- ")) {
-      return (
-        <div key={i} className="flex items-start gap-2.5 py-0.5">
-          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-          <span>{renderInline(trimmed.slice(2))}</span>
+function renderTextBlock(lines, startIdx) {
+  const elements = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const trimmed = lines[i].trim();
+
+    if (!trimmed) {
+      i++;
+      continue;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const Tag = `h${level}`;
+      const sizes = {
+        1: "text-xl font-bold mt-4 mb-2 text-slate-50",
+        2: "text-lg font-bold mt-4 mb-1.5 text-slate-100",
+        3: "text-base font-semibold mt-3 mb-1.5 text-slate-100",
+        4: "text-sm font-semibold mt-3 mb-1 text-slate-200",
+        5: "text-sm font-medium mt-2 mb-1 text-slate-200",
+        6: "text-xs font-medium mt-2 mb-1 text-slate-300",
+      };
+      elements.push(
+        <Tag key={startIdx + i} className={sizes[level] || sizes[3]}>
+          {renderInline(headingMatch[2])}
+        </Tag>
+      );
+      i++;
+      continue;
+    }
+
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      elements.push(
+        <hr key={startIdx + i} className="my-3 border-white/[0.08]" />
+      );
+      i++;
+      continue;
+    }
+
+    const blockquoteMatch = trimmed.match(/^>\s?(.*)$/);
+    if (blockquoteMatch) {
+      const quoteLines = [blockquoteMatch[1]];
+      i++;
+      while (i < lines.length && lines[i].trim().startsWith(">")) {
+        quoteLines.push(lines[i].trim().replace(/^>\s?/, ""));
+        i++;
+      }
+      elements.push(
+        <blockquote key={startIdx + i} className="my-2 border-l-2 border-indigo-400/40 pl-3 text-sm italic text-slate-400">
+          {quoteLines.map((ql, qi) => (
+            <p key={qi} className={qi > 0 ? "mt-1" : ""}>{renderInline(ql)}</p>
+          ))}
+        </blockquote>
+      );
+      continue;
+    }
+
+    if (/^[-*+]\s+/.test(trimmed)) {
+      const listItems = [];
+      while (i < lines.length && /^[-*+]\s+/.test(lines[i].trim())) {
+        listItems.push(lines[i].trim().replace(/^[-*+]\s+/, ""));
+        i++;
+      }
+      elements.push(
+        <div key={startIdx + i} className="my-1.5 space-y-1 pl-0.5">
+          {listItems.map((item, li) => (
+            <div key={li} className="flex items-start gap-2.5">
+              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
+              <span className="text-sm leading-relaxed">{renderInline(item)}</span>
+            </div>
+          ))}
         </div>
       );
+      continue;
     }
-    if (!trimmed) return null;
-    return (
-      <p key={i} className={i > 0 ? "mt-2.5" : ""}>
-        {renderInline(trimmed)}
+
+    if (/^\d+\.\s+/.test(trimmed)) {
+      const listItems = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i].trim())) {
+        const m = lines[i].trim().match(/^(\d+)\.\s+(.+)$/);
+        if (m) listItems.push({ num: m[1], text: m[2] });
+        i++;
+      }
+      elements.push(
+        <div key={startIdx + i} className="my-1.5 space-y-1 pl-0.5">
+          {listItems.map((item, li) => (
+            <div key={li} className="flex items-start gap-2.5">
+              <span className="mt-0.5 w-5 shrink-0 text-right font-mono text-[13px] font-medium text-indigo-400/70">{item.num}.</span>
+              <span className="text-sm leading-relaxed">{renderInline(item.text)}</span>
+            </div>
+          ))}
+        </div>
+      );
+      continue;
+    }
+
+    const paraLines = [trimmed];
+    i++;
+    while (i < lines.length && lines[i].trim() && !/^(#{1,6}\s|(-{3,}|\*{3,}|_{3,})$|>\s?|[-*+]\s+|\d+\.\s+)/.test(lines[i].trim())) {
+      paraLines.push(lines[i].trim());
+      i++;
+    }
+    elements.push(
+      <p key={startIdx + i} className="my-1.5 text-sm leading-relaxed text-slate-300">
+        {paraLines.length === 1 ? renderInline(paraLines[0]) : paraLines.map((pl, pi) => (
+          <span key={pi}>{pi > 0 && <br />}{renderInline(pl)}</span>
+        ))}
       </p>
     );
+  }
+
+  return elements;
+}
+
+function parseMessageSegments(text) {
+  const lines = text.split("\n");
+  const segments = [];
+  let currentTextLines = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const trimmed = lines[i].trim();
+    if (trimmed.startsWith("```")) {
+      if (currentTextLines.length > 0) {
+        segments.push({ type: "text", lines: currentTextLines, startIdx: segments.reduce((s, seg) => s + (seg.type === "text" ? seg.lines.length : 1), 0) });
+        currentTextLines = [];
+      }
+      const lang = trimmed.slice(3).trim();
+      const codeLines = [];
+      i++;
+      while (i < lines.length && !lines[i].trim().startsWith("```")) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length) i++;
+      segments.push({ type: "code", lang, code: codeLines.join("\n"), incomplete: false });
+    } else {
+      currentTextLines.push(lines[i]);
+      i++;
+    }
+  }
+
+  if (currentTextLines.length > 0) {
+    segments.push({ type: "text", lines: currentTextLines, startIdx: 0 });
+  }
+
+  return segments;
+}
+
+function renderMessageText(text) {
+  const segments = parseMessageSegments(text);
+  let idx = 0;
+  return segments.map((seg) => {
+    if (seg.type === "code") {
+      return <CodeBlock key={idx++} language={seg.lang} code={seg.code} />;
+    }
+    return <span key={idx++}>{renderTextBlock(seg.lines, idx)}</span>;
   });
+}
+
+/* ─── Syntax Highlighting ──────────────────────────────────────── */
+
+const HL_RULES = [
+  { pattern: /(\/\/.*$)/gm, className: "hl-comment" },
+  { pattern: /(\/\*[\s\S]*?\*\/)/g, className: "hl-comment" },
+  { pattern: /(#[^!].*$)/gm, className: "hl-comment" },
+  { pattern: /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`)/g, className: "hl-string" },
+  { pattern: /\b(true|false|null|undefined|None|True|False|nil|NaN|Infinity)\b/g, className: "hl-keyword" },
+  { pattern: /\b(function|return|if|else|for|while|do|switch|case|break|continue|class|extends|new|this|super|import|from|export|default|const|let|var|async|await|try|catch|finally|throw|typeof|instanceof|in|of|yield|delete|void)\b/g, className: "hl-keyword" },
+  { pattern: /\b(def|self|print|as|with|is|not|and|or|elif|except|lambda|global|nonlocal|raise|pass|del|assert|for|while|return|class|try|finally|from|import|global)\b/g, className: "hl-keyword" },
+  { pattern: /\b(int|float|str|list|dict|set|tuple|bool|char|double|long|short|byte|public|private|protected|static|final|abstract|interface|implements|package|synchronized|volatile|transient|native|strictfp|enum|struct|union|typedef|sizeof|NULL|malloc|free|printf|scanf|cin|cout|nullptr|auto|register|extern|inline|constexpr|noexcept|template|typename|concept|requires|co_await|co_return|co_yield)\b/g, className: "hl-keyword" },
+  { pattern: /\b(fmt|func|go|chan|select|case|defer|fallthrough|range|type|map|make|len|cap|append|copy|delete|close|panic|recover|error|bool|string|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|complex64|complex128|byte|rune)\b/g, className: "hl-keyword" },
+  { pattern: /\b(console|document|window|Math|Array|Object|String|Number|Boolean|RegExp|Date|Promise|Map|Set|JSON|Error|Symbol|BigInt|WeakMap|WeakSet|Proxy|Reflect|globalThis|fetch|Response|Request|URL|Headers|AbortController|setTimeout|setInterval|clearTimeout|clearInterval|parseInt|parseFloat|isNaN|isFinite|encodeURI|decodeURI|encodeURIComponent|decodeURIComponent|alert|confirm|prompt|location|navigator|history|localStorage|sessionStorage|indexedDB|caches|crypto|performance|origin|name|status|ok|type|url|redirected|body|bodyUsed|headers|arrayBuffer|blob|formData|json|text|clone)\b/g, className: "hl-builtin" },
+  { pattern: /\b(print|len|range|input|open|read|write|close|append|sort|map|filter|reduce|type|isinstance|issubclass|super|property|staticmethod|classmethod|__init__|__str__|__repr__|__enter__|__exit__|__call__|__iter__|__next__|__len__|__getitem__|__setitem__|__delitem__|__contains__|__add__|__sub__|__mul__|__truediv__|__floordiv__|__mod__|__pow__|__and__|__or__|__xor__|__lshift__|__rshift__|__neg__|__pos__|__abs__|__invert__)\b/g, className: "hl-builtin" },
+  { pattern: /\b(\d+\.?\d*(?:[eE][+-]?\d+)?)\b/g, className: "hl-number" },
+  { pattern: /(=>|===|!==|==|!=|<=|>=|&&|\|\||\.\.\.|\?\?|\?\.|->|<-|::|\.\.)/g, className: "hl-operator" },
+];
+
+const HL_KEYWORD = "#c084fc";
+const HL_STRING = "#86efac";
+const HL_COMMENT = "#64748b";
+const HL_NUMBER = "#fbbf24";
+const HL_BUILTIN = "#67e8f9";
+const HL_OPERATOR = "#f472b6";
+
+function highlightCode(code, _language) {
+  const tokens = [{ text: code, className: null }];
+  for (const rule of HL_RULES) {
+    const newTokens = [];
+    for (const token of tokens) {
+      if (token.className !== null) {
+        newTokens.push(token);
+        continue;
+      }
+      const parts = token.text.split(rule.pattern);
+      for (let j = 0; j < parts.length; j++) {
+        if (parts[j] === "") continue;
+        if (j % 2 === 1) {
+          newTokens.push({ text: parts[j], className: rule.className });
+        } else {
+          newTokens.push({ text: parts[j], className: null });
+        }
+      }
+    }
+    tokens.length = 0;
+    tokens.push(...newTokens);
+  }
+  return tokens.filter((t) => t.text);
+}
+
+const HL_COLOR_MAP = {
+  "hl-keyword": HL_KEYWORD,
+  "hl-string": HL_STRING,
+  "hl-comment": HL_COMMENT,
+  "hl-number": HL_NUMBER,
+  "hl-builtin": HL_BUILTIN,
+  "hl-operator": HL_OPERATOR,
+};
+
+/* ─── Code Block Component ─────────────────────────────────────── */
+
+function CodeBlock({ language, code }) {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef(null);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  const langLabel = language || "plaintext";
+  const tokens = highlightCode(code, language);
+
+  return (
+    <div className="my-3 overflow-hidden rounded-lg border border-white/[0.08] bg-[#0d1117] text-[12px] sm:my-3 sm:rounded-xl sm:text-[13px]">
+      <div className="flex items-center justify-between border-b border-white/[0.06] bg-white/[0.03] px-3 py-1.5 sm:px-4 sm:py-2">
+        <span className="font-mono text-[10px] font-medium text-slate-400 sm:text-[11px]">{langLabel}</span>
+        <button onClick={handleCopy}
+          className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-slate-400 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-200 sm:px-2 sm:py-1 sm:text-[11px]">
+          {copied ? (
+            <>
+              <svg className="h-3 w-3 text-emerald-400 sm:h-3.5 sm:w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span className="text-emerald-400">Copied</span>
+            </>
+          ) : (
+            <>
+              <svg className="h-3 w-3 sm:h-3.5 sm:w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+              </svg>
+              <span className="hidden sm:inline">Copy code</span>
+            </>
+          )}
+        </button>
+      </div>
+      <div className="overflow-x-auto px-3 py-2 sm:px-4 sm:py-3">
+        <pre className="m-0 whitespace-pre font-mono text-[12px] leading-relaxed sm:text-[13px]">
+          <code>
+            {tokens.map((token, i) => {
+              if (!token.className) return <span key={i}>{token.text}</span>;
+              const color = HL_COLOR_MAP[token.className];
+              return <span key={i} style={{ color }}>{token.text}</span>;
+            })}
+          </code>
+        </pre>
+      </div>
+    </div>
+  );
 }
 
 function BotAvatar() {
@@ -953,7 +1425,7 @@ function Message({ msg }) {
   }
 
   return (
-    <div className="group flex items-start gap-3">
+    <div className="group flex items-start gap-2 sm:gap-3">
       <BotAvatar />
       <div className="min-w-0 flex-1">
         <div className="mb-1.5 flex items-baseline gap-2 px-1">
@@ -975,7 +1447,7 @@ function Message({ msg }) {
             ))}
           </div>
         )}
-        <div className="mt-1.5 flex items-center gap-0.5 px-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
+        <div className="mt-1.5 flex items-center gap-0.5 px-1 sm:opacity-0 sm:transition-opacity sm:duration-150 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
           <MessageAction label="Copy response"><CopyIcon className="h-3.5 w-3.5" /></MessageAction>
           <MessageAction label="Regenerate response"><RefreshIcon className="h-3.5 w-3.5" /></MessageAction>
           <MessageAction label="Like response"><ThumbsUpIcon className="h-3.5 w-3.5" /></MessageAction>
@@ -1022,7 +1494,7 @@ function WelcomeState({ onPick }) {
   );
 }
 
-function ChatPage({ messages, setMessages, chatInput, setChatInput }) {
+function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId, setActiveChatId, setChatSessions }) {
   const [isTyping, setIsTyping] = useState(false);
   const [statusText, setStatusText] = useState("");
   const scrollRef = useRef(null);
@@ -1045,10 +1517,13 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput }) {
     let answer = "";
     let sources = [];
     let failed = null;
+    let newChatId = null;
 
     try {
       await askAI(text, {
+        chatId: activeChatId,
         onStatus: (msg) => setStatusText(msg),
+        onChatId: (id) => { newChatId = id; },
         onDelta: (t) => {
           answer += t;
           setMessages((prev) => {
@@ -1080,6 +1555,14 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput }) {
       return next;
     });
 
+    if (newChatId) {
+      setActiveChatId(newChatId);
+      setChatSessions((prev) => [{ _id: newChatId, title: text.slice(0, 80), updatedAt: new Date().toISOString() }, ...prev]);
+    } else if (activeChatId) {
+      setChatSessions((prev) => prev.map((c) => c._id === activeChatId ? { ...c, updatedAt: new Date().toISOString() } : c));
+    }
+
+    listChats().then((chats) => setChatSessions(chats)).catch(() => {});
     setStatusText("");
     setIsTyping(false);
   };

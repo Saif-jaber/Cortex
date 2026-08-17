@@ -6,7 +6,11 @@ const chatSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true,
+    },
+    title: {
+      type: String,
+      default: "New chat",
+      trim: true,
     },
     messages: [
       {
@@ -34,5 +38,7 @@ const chatSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+chatSchema.index({ owner: 1, createdAt: -1 });
 
 export default mongoose.model("Chat", chatSchema);

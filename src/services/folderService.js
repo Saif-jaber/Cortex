@@ -28,3 +28,13 @@ export async function listFolders(data){
   if (!res.ok) throw new Error(json.error || "Failed to load folders");
   return json;
 }
+
+export async function deleteFolder(id) {
+  const res = await fetch(`${API_URL}/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || "Failed to delete folder");
+  return json;
+}

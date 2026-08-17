@@ -7,11 +7,48 @@ function authHeaders() {
   return headers;
 }
 
-export async function askAI(question, { onStatus, onDelta, onSources, onError } = {}) {
+function jsonHeaders() {
+  return { ...authHeaders(), "Content-Type": "application/json" };
+}
+
+async function parseJson(res) {
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || "Request failed");
+  return json;
+}
+
+export async function listChats() {
+  const res = await fetch(API_URL, { headers: authHeaders() });
+  return parseJson(res);
+}
+
+export async function getChat(id) {
+  const res = await fetch(`${API_URL}/${id}`, { headers: authHeaders() });
+  return parseJson(res);
+}
+
+export async function createChat(title) {
+  const res = await fetch(`${API_URL}/new`, {
+    method: "POST",
+    headers: jsonHeaders(),
+    body: JSON.stringify({ title }),
+  });
+  return parseJson(res);
+}
+
+export async function deleteChat(id) {
+  const res = await fetch(`${API_URL}/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  return parseJson(res);
+}
+
+export async function askAI(question, { chatId, onStatus, onDelta, onSources, onChatId, onError } = {}) {
   const res = await fetch(API_URL, {
     method: "POST",
-    headers: { ...authHeaders(), "Content-Type": "application/json" },
-    body: JSON.stringify({ question }),
+    headers: jsonHeaders(),
+    body: JSON.stringify({ question, chatId }),
   });
 
   if (!res.ok) {
@@ -40,6 +77,7 @@ export async function askAI(question, { onStatus, onDelta, onSources, onError } 
         if (payload.type === "status" && onStatus) onStatus(payload.message);
         else if (payload.type === "delta" && onDelta) onDelta(payload.text);
         else if (payload.type === "sources" && onSources) onSources(payload.sources || []);
+        else if (payload.type === "chatId" && onChatId) onChatId(payload.chatId);
         else if (payload.type === "error" && onError) onError(payload.message);
       } catch {
         // ignore malformed events

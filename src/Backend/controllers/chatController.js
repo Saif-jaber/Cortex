@@ -2,6 +2,7 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { r2 } from "../config/r2.js";
 import File from "../models/File.js";
 import FileChunk from "../models/FileChunk.js";
+import Folder from "../models/Folder.js";
 import Chat from "../models/Chat.js";
 import { OLLAMA_BASE_URL, OLLAMA_CHAT_MODEL, embedText } from "../config/ollama.js";
 import { canExtract, extractText } from "../utils/textExtractor.js";
@@ -75,8 +76,52 @@ function sourceType(fileType) {
   return "word";
 }
 
+export async function listChats(req, res) {
+  try {
+    const chats = await Chat.find({ owner: req.user.id })
+      .select("title createdAt updatedAt")
+      .sort({ updatedAt: -1 });
+    res.json(chats);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function getChat(req, res) {
+  try {
+    const chatDoc = await Chat.findOne({ _id: req.params.id, owner: req.user.id });
+    if (!chatDoc) return res.status(404).json({ error: "Chat not found" });
+    res.json(chatDoc);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function createChat(req, res) {
+  try {
+    const chatDoc = await Chat.create({
+      owner: req.user.id,
+      title: req.body.title || "New chat",
+      messages: [],
+    });
+    res.status(201).json(chatDoc);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function deleteChat(req, res) {
+  try {
+    const chatDoc = await Chat.findOneAndDelete({ _id: req.params.id, owner: req.user.id });
+    if (!chatDoc) return res.status(404).json({ error: "Chat not found" });
+    res.json({ message: "Chat deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 export async function chat(req, res) {
-  const { question } = req.body;
+  const { question, chatId } = req.body;
   if (!question || !question.trim()) {
     return res.status(400).json({ error: "question is required" });
   }
@@ -97,12 +142,19 @@ export async function chat(req, res) {
   const controller = new AbortController();
   req.on("close", () => controller.abort());
 
+  let answer = "";
+  let savedSources = [];
+  let chatIdToSend = null;
+
   try {
     const files = await File.find({ owner: req.user.id }).sort({ createdAt: -1 });
     if (files.length === 0) {
       sendEvent({ type: "error", message: "No files in your knowledge base yet. Upload a file first." });
       return res.end();
     }
+
+    const folders = await Folder.find({ owner: req.user.id });
+    const folderNameById = new Map(folders.map((f) => [f._id.toString(), f.folderName]));
 
     for (const file of files) {
       await ensureIndexed(file, sendEvent);
@@ -117,15 +169,42 @@ export async function chat(req, res) {
       .slice(0, TOP_K);
 
     const typeByName = new Map(files.map((f) => [f.fileName, f.fileType]));
+    const folderByFileId = new Map(files.map((f) => [f._id.toString(), f.folder ? folderNameById.get(f.folder.toString()) : null]));
+
+    function fileLabel(f) {
+      const folder = f.folder ? folderNameById.get(f.folder.toString()) : null;
+      return folder ? `${f.fileName} (in "${folder}")` : f.fileName;
+    }
 
     const context = scored
-      .map(({ chunk }) => `[Document: ${chunk.fileName}]\n${chunk.text}`)
+      .map(({ chunk }) => {
+        const folder = folderByFileId.get(chunk.file.toString());
+        const loc = folder ? ` [${folder}]` : "";
+        return `[Document: ${chunk.fileName}${loc}]\n${chunk.text}`;
+      })
       .join("\n\n");
 
-    const chatDoc = await Chat.findOneAndUpdate(
-      { owner: req.user.id },
-      { $setOnInsert: { owner: req.user.id, messages: [] } },
-      { new: true, upsert: true }
+    const fileManifest = files.map((f, i) => `${i + 1}. ${fileLabel(f)}`).join("\n");
+
+    let chatDoc;
+    if (chatId) {
+      chatDoc = await Chat.findOne({ _id: chatId, owner: req.user.id });
+      if (!chatDoc) {
+        sendEvent({ type: "error", message: "Chat not found." });
+        return res.end();
+      }
+    } else {
+      chatDoc = await Chat.create({ owner: req.user.id, title: question.slice(0, 80), messages: [] });
+      chatIdToSend = chatDoc._id.toString();
+      sendEvent({ type: "chatId", chatId: chatIdToSend });
+    }
+
+    await Chat.updateOne(
+      { _id: chatDoc._id },
+      {
+        $push: { messages: { role: "user", content: question } },
+        $set: { updatedAt: new Date() },
+      }
     );
 
     const history = chatDoc.messages.slice(-MAX_HISTORY).map((m) => ({
@@ -134,13 +213,30 @@ export async function chat(req, res) {
     }));
 
     const systemPrompt =
-      "You are Cortex AI, an assistant for a personal knowledge base. " +
-      "Answer the user's question using ONLY the document excerpts provided below. " +
-      "If the answer is not in the excerpts, say you don't know based on the files. " +
-      "Mention the source filename when you reference a document. Be concise.";
+      "You are Cortex AI, an assistant for a personal knowledge base.\n\n" +
+      "RULES:\n" +
+      "- Answer using ONLY the document excerpts provided below.\n" +
+      "- The file manifest lists every file relevant to this question, with folder locations in parentheses.\n" +
+      "- When referencing a file, use its exact name from the manifest.\n" +
+      "- If asked about files in a specific folder, filter the manifest by the folder name shown in parentheses.\n" +
+      "- If the excerpts do not contain enough information, say so honestly. Do not guess or hallucinate.\n" +
+      "- If asked to summarize or count files, work only from the manifest below — not from memory or assumptions.\n\n" +
+      "FORMATTING:\n" +
+      "- Use markdown headings (##, ###) to organize sections when the answer has multiple parts.\n" +
+      "- Use **bold** for key terms, file names, or important values.\n" +
+      "- Write short paragraphs for explanations, not just bullet lists.\n" +
+      "- Use bullet points only for actual lists of items.\n" +
+      "- Use numbered steps (1. 2. 3.) for sequential instructions or ordered information.\n" +
+      "- Use > blockquotes for definitions, tips, or important callouts.\n" +
+      "- Use `inline code` for file names, commands, or technical terms.\n" +
+      "- Separate sections with a blank line for readability.";
+
+    const contextBlock = context
+      ? `\n\nFile manifest (${files.length} files):\n${fileManifest}\n\nDocument excerpts:\n${context}`
+      : "";
 
     const messages = [
-      { role: "system", content: systemPrompt + (context ? `\n\nDocuments:\n${context}` : "") },
+      { role: "system", content: systemPrompt + contextBlock },
       ...history,
       { role: "user", content: question },
     ];
@@ -163,7 +259,6 @@ export async function chat(req, res) {
     const reader = ollamaRes.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
-    let answer = "";
 
     while (true) {
       const { done, value } = await reader.read();
@@ -189,30 +284,36 @@ export async function chat(req, res) {
     }
 
     const seen = new Set();
-    const sources = [];
     for (const { chunk } of scored) {
       if (seen.has(chunk.fileName)) continue;
       seen.add(chunk.fileName);
-      sources.push({ name: chunk.fileName, type: sourceType(typeByName.get(chunk.fileName)) });
+      savedSources.push({ name: chunk.fileName, type: sourceType(typeByName.get(chunk.fileName)) });
     }
-
-    await Chat.updateOne(
-      { owner: req.user.id },
-      {
-        $push: {
-          messages: [
-            { role: "user", content: question },
-            { role: "assistant", content: answer || "No response generated.", sources },
-          ],
-        },
-      }
-    );
-
-    sendEvent({ type: "sources", sources });
-    sendEvent({ type: "done" });
-    res.end();
   } catch (err) {
-    sendEvent({ type: "error", message: err.message });
-    res.end();
+    console.error("Chat error:", err);
+    if (!answer) {
+      answer = "Something went wrong while generating a response. Please try again.";
+      sendEvent({ type: "error", message: err.message });
+    }
   }
+
+  if (chatDoc) {
+    try {
+      await Chat.updateOne(
+        { _id: chatDoc._id },
+        {
+          $push: {
+            messages: { role: "assistant", content: answer || "No response generated.", sources: savedSources },
+          },
+          $set: { updatedAt: new Date() },
+        }
+      );
+    } catch (saveErr) {
+      console.error("Failed to save assistant message:", saveErr);
+    }
+  }
+
+  sendEvent({ type: "sources", sources: savedSources });
+  sendEvent({ type: "done" });
+  res.end();
 }
