@@ -1524,6 +1524,9 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId
         chatId: activeChatId,
         onStatus: (msg) => setStatusText(msg),
         onChatId: (id) => { newChatId = id; },
+        onTitle: (title) => {
+          setChatSessions((prev) => prev.map((c) => c._id === newChatId ? { ...c, title } : c));
+        },
         onDelta: (t) => {
           answer += t;
           setMessages((prev) => {

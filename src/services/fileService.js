@@ -45,6 +45,11 @@ export async function listFiles() {
   return parseResponse(res);
 }
 
+export async function getStorageStats() {
+  const res = await fetch(`${API_URL}/storage`, { headers: authHeaders() });
+  return parseResponse(res);
+}
+
 export async function getDownloadUrl(id) {
   const res = await fetch(`${API_URL}/${id}/download`, { headers: authHeaders() });
   return parseResponse(res);

@@ -28,11 +28,13 @@ The AI runs **locally on your machine** via [Ollama](https://ollama.com), so you
 ## Key Features
 
 - **AI Chat with Citations** | Ask anything in plain language. Answers are generated from your uploaded files via retrieval-augmented generation (RAG) and cite the exact source documents
+- **Persistent Chat History** | Full conversation history is saved to MongoDB and restored when you revisit a chat. Chats are auto-titled by the AI based on the conversation
 - **Private by Design** | The AI runs locally with Ollama (embedding model + chat model). No external AI APIs, no training on your data
 - **Semantic Retrieval** | Documents are chunked, embedded and searched by meaning, not just keywords
 - **Secure Authentication** | Sign up / sign in with JWT and bcrypt password hashing, per-user file scoping
 - **Folder Organization** | Create folders, click to filter files by folder, live file counts per folder
 - **Cloud File Storage** | Files stored in Cloudflare R2 via presigned URLs, validated by type (PDF/DOC/DOCX/PPT/PPTX) and size (max 50 MB)
+- **Storage Dashboard** | Profile page shows accurate total storage used across all uploaded files
 - **Metadata in MongoDB** | File records and AI chunk embeddings live in Mongo, binaries never touch the database
 - **Ownership Checks** | Download, delete and chat endpoints verify the file belongs to the requester
 - **Dark Mode UI** | Clean, minimal, responsive interface designed for focus
@@ -156,11 +158,16 @@ npm run dev
 | GET | `/api/folders` | ✅ | List all folders |
 | POST | `/api/folders` | ✅ | Create a folder |
 | GET | `/api/files` | ✅ | List all files (owner populated) |
+| GET | `/api/files/storage` | ✅ | Get total storage used (bytes) and file count |
 | POST | `/api/files/upload-url` | ✅ | Get a signed upload URL |
 | POST | `/api/files` | ✅ | Save file metadata after upload |
 | GET | `/api/files/:id/download` | ✅ | Get a signed download URL |
 | DELETE | `/api/files/:id` | ✅ | Delete from R2 + database |
-| POST | `/api/chat` | ✅ | Ask a question — streams RAG answer over SSE (`status`, `delta`, `sources`, `done`, `error` events) |
+| GET | `/api/chat` | ✅ | List all chats (titles + timestamps) |
+| POST | `/api/chat` | ✅ | Ask a question — streams RAG answer over SSE (`status`, `delta`, `sources`, `chatId`, `title`, `done`, `error` events) |
+| POST | `/api/chat/new` | ✅ | Create a new empty chat |
+| GET | `/api/chat/:id` | ✅ | Load a chat with full message history |
+| DELETE | `/api/chat/:id` | ✅ | Delete a chat |
 
 ## Screenshots
 
@@ -173,6 +180,9 @@ npm run dev
 - [x] Cloud file storage (presigned URLs, Cloudflare R2)
 - [x] Folder filtering and file management UI
 - [x] AI chat with RAG over uploaded files (local Ollama, cited answers)
+- [x] Persistent chat history with full conversation saving
+- [x] AI-generated chat titles
+- [x] Accurate storage usage on profile page
 - [ ] AI reading for legacy `.doc` / `.ppt` files
 - [ ] File re-indexing when documents change
 - [ ] Export chat answers and saved conversations

@@ -44,7 +44,7 @@ export async function deleteChat(id) {
   return parseJson(res);
 }
 
-export async function askAI(question, { chatId, onStatus, onDelta, onSources, onChatId, onError } = {}) {
+export async function askAI(question, { chatId, onStatus, onDelta, onSources, onChatId, onError, onTitle } = {}) {
   const res = await fetch(API_URL, {
     method: "POST",
     headers: jsonHeaders(),
@@ -78,6 +78,7 @@ export async function askAI(question, { chatId, onStatus, onDelta, onSources, on
         else if (payload.type === "delta" && onDelta) onDelta(payload.text);
         else if (payload.type === "sources" && onSources) onSources(payload.sources || []);
         else if (payload.type === "chatId" && onChatId) onChatId(payload.chatId);
+        else if (payload.type === "title" && onTitle) onTitle(payload.title);
         else if (payload.type === "error" && onError) onError(payload.message);
       } catch {
         // ignore malformed events

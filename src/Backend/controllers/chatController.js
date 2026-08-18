@@ -145,6 +145,7 @@ export async function chat(req, res) {
   let answer = "";
   let savedSources = [];
   let chatIdToSend = null;
+  let chatDoc = null;
 
   try {
     const files = await File.find({ owner: req.user.id }).sort({ createdAt: -1 });
@@ -186,7 +187,6 @@ export async function chat(req, res) {
 
     const fileManifest = files.map((f, i) => `${i + 1}. ${fileLabel(f)}`).join("\n");
 
-    let chatDoc;
     if (chatId) {
       chatDoc = await Chat.findOne({ _id: chatId, owner: req.user.id });
       if (!chatDoc) {
@@ -199,15 +199,16 @@ export async function chat(req, res) {
       sendEvent({ type: "chatId", chatId: chatIdToSend });
     }
 
-    await Chat.updateOne(
+    const updatedChat = await Chat.findOneAndUpdate(
       { _id: chatDoc._id },
       {
         $push: { messages: { role: "user", content: question } },
         $set: { updatedAt: new Date() },
-      }
+      },
+      { new: true }
     );
 
-    const history = chatDoc.messages.slice(-MAX_HISTORY).map((m) => ({
+    const history = updatedChat.messages.slice(-MAX_HISTORY).map((m) => ({
       role: m.role === "assistant" ? "assistant" : "user",
       content: m.content,
     }));
@@ -310,6 +311,35 @@ export async function chat(req, res) {
       );
     } catch (saveErr) {
       console.error("Failed to save assistant message:", saveErr);
+    }
+  }
+
+  if (chatDoc && chatIdToSend) {
+    try {
+      const titleRes = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: OLLAMA_CHAT_MODEL,
+          messages: [
+            { role: "system", content: "Generate a short chat title (max 6 words) summarizing the user's question. Reply with ONLY the title, no quotes, no punctuation." },
+            { role: "user", content: question },
+          ],
+          stream: false,
+          think: false,
+        }),
+      });
+      if (titleRes.ok) {
+        const titleData = await titleRes.json();
+        const title = titleData.message?.content?.trim().slice(0, 80);
+        if (title) {
+          await Chat.updateOne({ _id: chatDoc._id }, { $set: { title } });
+          sendEvent({ type: "title", title });
+        }
+      }
+    } catch {
+      /* title generation is non-critical */
     }
   }
 

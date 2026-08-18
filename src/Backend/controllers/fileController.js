@@ -94,6 +94,16 @@ export async function listFiles(req, res) {
   }
 }
 
+export async function getStorageStats(req, res) {
+  try {
+    const files = await File.find({ owner: req.user.id }).select("fileSize");
+    const totalBytes = files.reduce((sum, f) => sum + (f.fileSize || 0), 0);
+    res.json({ totalBytes, fileCount: files.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 export async function deleteFile(req, res) {
   try {
     const file = await File.findOne({ _id: req.params.id, owner: req.user.id });

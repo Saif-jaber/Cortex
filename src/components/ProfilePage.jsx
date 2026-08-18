@@ -1,7 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "../hooks/useToast.jsx";
+import { getStorageStats } from "../services/fileService";
 
 const DEFAULT_USER = { firstName: "", lastName: "", email: "", role: "" };
+
+function formatBytes(bytes) {
+  if (bytes === 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
+}
 
 function loadUser() {
   try {
@@ -19,6 +27,11 @@ function initials(user) {
 export default function ProfilePage({ foldersCount = 0, filesCount = 0, onOpenApiKey, onExitHome }) {
   const toast = useToast();
   const [profile, setProfile] = useState(loadUser);
+  const [storageBytes, setStorageBytes] = useState(0);
+
+  useEffect(() => {
+    getStorageStats().then((s) => setStorageBytes(s.totalBytes)).catch(() => {});
+  }, []);
 
   const handleSave = () => {
     localStorage.setItem("user", JSON.stringify(profile));
@@ -54,7 +67,7 @@ export default function ProfilePage({ foldersCount = 0, filesCount = 0, onOpenAp
         <div className="mt-6 grid grid-cols-3 divide-x divide-white/[0.06] rounded-xl border border-white/[0.06] bg-white/[0.02]">
           <Stat label="Folders" value={foldersCount} />
           <Stat label="Files" value={filesCount} />
-          <Stat label="Storage" value="2.4 GB" />
+          <Stat label="Storage" value={formatBytes(storageBytes)} />
         </div>
       </section>
 
