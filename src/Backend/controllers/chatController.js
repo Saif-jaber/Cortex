@@ -157,9 +157,17 @@ export async function chat(req, res) {
     const folders = await Folder.find({ owner: req.user.id });
     const folderNameById = new Map(folders.map((f) => [f._id.toString(), f.folderName]));
 
+    const unindexed = [];
     for (const file of files) {
-      await ensureIndexed(file, sendEvent);
+      const existing = await FileChunk.countDocuments({ file: file._id, owner: file.owner });
+      if (existing === 0 && canExtract(file.fileType)) unindexed.push(file);
     }
+
+    for (let i = 0; i < unindexed.length; i++) {
+      await ensureIndexed(unindexed[i], sendEvent);
+    }
+
+    sendEvent({ type: "status", message: "Searching knowledge base..." });
 
     const queryEmbedding = await embedText(question);
 
@@ -214,10 +222,14 @@ export async function chat(req, res) {
     }));
 
     const systemPrompt =
-      "You are Cortex AI, an assistant for a personal knowledge base.\n\n" +
-      "RULES:\n" +
-      "- Answer using ONLY the document excerpts provided below.\n" +
-      "- The file manifest lists every file relevant to this question, with folder locations in parentheses.\n" +
+      "You are Cortex AI, a helpful and friendly assistant for a personal knowledge base.\n\n" +
+      "HOW TO RESPOND:\n" +
+      "- For greetings (hello, hi, hey, good morning, etc.), respond warmly and naturally. Introduce yourself briefly and ask how you can help. Do NOT mention files or the knowledge base.\n" +
+      "- For casual conversation, small talk, or general questions not related to the documents, respond naturally and conversationally. Do NOT reference the file manifest or document excerpts.\n" +
+      "- For questions about the user's documents, files, or knowledge base, use the document excerpts provided below to answer accurately.\n\n" +
+      "KNOWLEDGE BASE RULES (only when answering document-related questions):\n" +
+      "- Answer using the document excerpts provided below.\n" +
+      "- The file manifest lists every file in the knowledge base, with folder locations in parentheses.\n" +
       "- When referencing a file, use its exact name from the manifest.\n" +
       "- If asked about files in a specific folder, filter the manifest by the folder name shown in parentheses.\n" +
       "- If the excerpts do not contain enough information, say so honestly. Do not guess or hallucinate.\n" +
@@ -284,11 +296,15 @@ export async function chat(req, res) {
       }
     }
 
+    const answerLower = answer.toLowerCase();
     const seen = new Set();
     for (const { chunk } of scored) {
       if (seen.has(chunk.fileName)) continue;
-      seen.add(chunk.fileName);
-      savedSources.push({ name: chunk.fileName, type: sourceType(typeByName.get(chunk.fileName)) });
+      const baseName = chunk.fileName.replace(/\.[^.]+$/, "").toLowerCase();
+      if (answerLower.includes(chunk.fileName.toLowerCase()) || answerLower.includes(baseName)) {
+        seen.add(chunk.fileName);
+        savedSources.push({ name: chunk.fileName, type: sourceType(typeByName.get(chunk.fileName)) });
+      }
     }
   } catch (err) {
     console.error("Chat error:", err);
@@ -314,36 +330,29 @@ export async function chat(req, res) {
     }
   }
 
-  if (chatDoc && chatIdToSend) {
-    try {
-      const titleRes = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model: OLLAMA_CHAT_MODEL,
-          messages: [
-            { role: "system", content: "Generate a short chat title (max 6 words) summarizing the user's question. Reply with ONLY the title, no quotes, no punctuation." },
-            { role: "user", content: question },
-          ],
-          stream: false,
-          think: false,
-        }),
-      });
-      if (titleRes.ok) {
-        const titleData = await titleRes.json();
-        const title = titleData.message?.content?.trim().slice(0, 80);
-        if (title) {
-          await Chat.updateOne({ _id: chatDoc._id }, { $set: { title } });
-          sendEvent({ type: "title", title });
-        }
-      }
-    } catch {
-      /* title generation is non-critical */
-    }
-  }
-
   sendEvent({ type: "sources", sources: savedSources });
   sendEvent({ type: "done" });
   res.end();
+
+  if (chatDoc && chatIdToSend) {
+    fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: OLLAMA_CHAT_MODEL,
+        messages: [
+          { role: "system", content: "Generate a short chat title (max 6 words) summarizing the user's question. Reply with ONLY the title, no quotes, no punctuation." },
+          { role: "user", content: question },
+        ],
+        stream: false,
+        think: false,
+      }),
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        const title = data?.message?.content?.trim().slice(0, 80);
+        if (title) Chat.updateOne({ _id: chatDoc._id }, { $set: { title } }).catch(() => {});
+      })
+      .catch(() => {});
+  }
 }

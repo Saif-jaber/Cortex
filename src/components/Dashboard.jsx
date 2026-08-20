@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import FolderPopup from "./FolderPopup";
 import FilePopup from "./FilePopup";
 import ProfilePage from "./ProfilePage";
@@ -1403,16 +1403,24 @@ function UserAvatar() {
   );
 }
 
-function MessageAction({ label, children }) {
+function MessageAction({ label, children, onClick }) {
   return (
-    <button aria-label={label} title={label}
+    <button aria-label={label} title={label} onClick={onClick}
       className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-200">
       {children}
     </button>
   );
 }
 
-function Message({ msg }) {
+const Message = memo(function Message({ msg }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(msg.text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   if (msg.role === "user") {
     return (
       <div className="flex items-end justify-end gap-3">
@@ -1448,15 +1456,17 @@ function Message({ msg }) {
           </div>
         )}
         <div className="mt-1.5 flex items-center gap-0.5 px-1 sm:opacity-0 sm:transition-opacity sm:duration-150 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
-          <MessageAction label="Copy response"><CopyIcon className="h-3.5 w-3.5" /></MessageAction>
+          <MessageAction label={copied ? "Copied!" : "Copy response"} onClick={handleCopy}>
+            {copied
+              ? <svg className="h-3.5 w-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              : <CopyIcon className="h-3.5 w-3.5" />}
+          </MessageAction>
           <MessageAction label="Regenerate response"><RefreshIcon className="h-3.5 w-3.5" /></MessageAction>
-          <MessageAction label="Like response"><ThumbsUpIcon className="h-3.5 w-3.5" /></MessageAction>
-          <MessageAction label="Dislike response"><ThumbsDownIcon className="h-3.5 w-3.5" /></MessageAction>
         </div>
       </div>
     </div>
   );
-}
+});
 
 function TypingIndicator() {
   return (
@@ -1496,7 +1506,6 @@ function WelcomeState({ onPick }) {
 
 function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId, setActiveChatId, setChatSessions }) {
   const [isTyping, setIsTyping] = useState(false);
-  const [statusText, setStatusText] = useState("");
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -1512,33 +1521,39 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId
     setMessages((prev) => [...prev, { role: "user", text, time: formatTime(new Date()) }]);
     setChatInput("");
     setIsTyping(true);
-    setStatusText("");
 
     let answer = "";
     let sources = [];
     let failed = null;
     let newChatId = null;
+    let flushTimer = null;
+
+    const flushDelta = () => {
+      flushTimer = null;
+      setMessages((prev) => {
+        const next = [...prev];
+        const last = next[next.length - 1];
+        if (last?.role === "bot" && last.streaming) {
+          next[next.length - 1] = { ...last, text: answer };
+        } else {
+          next.push({ role: "bot", text: answer, time: formatTime(new Date()), streaming: true });
+        }
+        return next;
+      });
+    };
+
+    const FLUSH_MS = 40;
 
     try {
       await askAI(text, {
         chatId: activeChatId,
-        onStatus: (msg) => setStatusText(msg),
         onChatId: (id) => { newChatId = id; },
         onTitle: (title) => {
           setChatSessions((prev) => prev.map((c) => c._id === newChatId ? { ...c, title } : c));
         },
         onDelta: (t) => {
           answer += t;
-          setMessages((prev) => {
-            const next = [...prev];
-            const last = next[next.length - 1];
-            if (last?.role === "bot" && last.streaming) {
-              next[next.length - 1] = { ...last, text: answer };
-            } else {
-              next.push({ role: "bot", text: answer, time: formatTime(new Date()), streaming: true });
-            }
-            return next;
-          });
+          if (!flushTimer) flushTimer = setTimeout(flushDelta, FLUSH_MS);
         },
         onSources: (s) => { sources = s; },
         onError: (msg) => { failed = msg; },
@@ -1546,6 +1561,9 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId
     } catch (err) {
       failed = err.message;
     }
+
+    if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+    flushDelta();
 
     setMessages((prev) => {
       const next = [...prev];
@@ -1566,7 +1584,6 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId
     }
 
     listChats().then((chats) => setChatSessions(chats)).catch(() => {});
-    setStatusText("");
     setIsTyping(false);
   };
 
@@ -1589,7 +1606,6 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId
             messages.map((msg, i) => <Message key={i} msg={msg} />)
           )}
           {isTyping && !messages.some((m) => m.streaming) && <TypingIndicator />}
-          {statusText && <p className="pb-1 text-center text-xs text-slate-500">{statusText}</p>}
         </div>
       </div>
 
@@ -1633,24 +1649,6 @@ function RefreshIcon({ className }) {
       <polyline points="23 4 23 10 17 10" />
       <polyline points="1 20 1 14 7 14" />
       <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-    </svg>
-  );
-}
-
-function ThumbsUpIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7 10v12" />
-      <path d="M15 5.88 14 10h5.83a2 2 0 011.92 2.56l-2.33 8A2 2 0 0117.5 22H4a2 2 0 01-2-2v-8a2 2 0 012-2h2.76a2 2 0 001.79-1.11L12 2h0a3.13 3.13 0 013 3.88Z" />
-    </svg>
-  );
-}
-
-function ThumbsDownIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 14V2" />
-      <path d="M9 18.12 10 14H4.17a2 2 0 01-1.92-2.56l2.33-8A2 2 0 016.5 2H20a2 2 0 012 2v8a2 2 0 01-2 2h-2.76a2 2 0 00-1.79 1.11L12 22h0a3.13 3.13 0 01-3-3.88Z" />
     </svg>
   );
 }
