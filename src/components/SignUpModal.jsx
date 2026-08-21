@@ -83,7 +83,7 @@ export default function SignUpModal({ onClose, onSwitchToSignIn }) {
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Ada"
               autoComplete="given-name"
-              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors focus:border-indigo-400 focus:bg-white/[0.05] sm:px-3.5 sm:py-2.5"
+              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors focus:border-gold-400 focus:bg-white/[0.05] sm:px-3.5 sm:py-2.5"
             />
           </div>
           <div>
@@ -98,7 +98,7 @@ export default function SignUpModal({ onClose, onSwitchToSignIn }) {
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Lovelace"
               autoComplete="family-name"
-              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors focus:border-indigo-400 focus:bg-white/[0.05] sm:px-3.5 sm:py-2.5"
+              className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors focus:border-gold-400 focus:bg-white/[0.05] sm:px-3.5 sm:py-2.5"
             />
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function SignUpModal({ onClose, onSwitchToSignIn }) {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
             autoComplete="email"
-            className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors focus:border-indigo-400 focus:bg-white/[0.05] sm:px-3.5 sm:py-2.5"
+            className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors focus:border-gold-400 focus:bg-white/[0.05] sm:px-3.5 sm:py-2.5"
           />
         </div>
         <div>
@@ -134,7 +134,7 @@ export default function SignUpModal({ onClose, onSwitchToSignIn }) {
                 ? "border-red-500/50 focus:border-red-400"
                 : strong
                   ? "border-emerald-500/50 focus:border-emerald-400"
-                  : "border-white/[0.1] focus:border-indigo-400"
+                  : "border-white/[0.1] focus:border-gold-400"
             }`}
           />
           {password.length > 0 && (
@@ -162,7 +162,7 @@ export default function SignUpModal({ onClose, onSwitchToSignIn }) {
         <button
           type="submit"
           disabled={submitting || !strong}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60 sm:py-3"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gold-400 py-2.5 text-sm font-semibold text-[#17171a] shadow-lg shadow-gold-400/25 transition-all duration-200 hover:bg-gold-300 disabled:cursor-not-allowed disabled:opacity-60 sm:py-3"
         >
           {submitting ? "Creating your workspace…" : "Create account"}
           {!submitting && <ArrowRightIcon className="h-4 w-4" />}
@@ -174,7 +174,7 @@ export default function SignUpModal({ onClose, onSwitchToSignIn }) {
         <button
           type="button"
           onClick={onSwitchToSignIn}
-          className="font-semibold text-indigo-400 hover:text-indigo-300"
+          className="font-semibold text-gold-400 hover:text-gold-300"
         >
           Sign in
         </button>

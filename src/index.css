@@ -4,18 +4,36 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-  --color-ink-950: #070b13;
-  --color-ink-900: #0a0e1a;
-  --color-ink-850: #0d1220;
-  --color-ink-800: #0f1525;
-  --color-ink-700: #131b2e;
-  --color-ink-600: #182032;
-  --color-ink-500: #1a2540;
+  /* Black & Gray — backgrounds and UI panels */
+  --color-ink-950: #09090b;
+  --color-ink-900: #121214;
+  --color-ink-850: #161619;
+  --color-ink-800: #1a1a1e;
+  --color-ink-700: #202024;
+  --color-ink-600: #26262b;
+  --color-ink-500: #2e2e33;
+
+  /* Gold — accents and highlights */
+  --color-gold-200: #f4e8bd;
+  --color-gold-300: #ebd076;
+  --color-gold-400: #d4af37;
+  --color-gold-500: #b9962e;
+  --color-gold-600: #96791e;
+
+  /* Neutral gray text scale (replaces blue-tinted slate) */
+  --color-slate-50: #fafafa;
+  --color-slate-100: #e0e0e0;
+  --color-slate-200: #cfcfd4;
+  --color-slate-300: #b4b4ba;
+  --color-slate-400: #98989e;
+  --color-slate-500: #808080;
+  --color-slate-600: #5a5a60;
+  --color-slate-700: #444449;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(100, 116, 139, 0.25) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -28,12 +46,12 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: rgba(100, 116, 139, 0.25);
+  background-color: rgba(255, 255, 255, 0.1);
   border-radius: 9999px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(100, 116, 139, 0.4);
+  background-color: rgba(255, 255, 255, 0.18);
 }
 
 html {
@@ -44,8 +62,8 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0a0e1a;
-  color: #e2e8f0;
+  background-color: #09090b;
+  color: #e0e0e0;
 }
 
 button {
@@ -58,7 +76,7 @@ button {
 
 input:focus:not(:placeholder-shown),
 textarea:focus:not(:placeholder-shown) {
-  caret-color: #f1f5f9;
+  caret-color: #e0e0e0;
 }
 
 .scrollbar-hide {
@@ -70,11 +88,11 @@ textarea:focus:not(:placeholder-shown) {
   display: none;
 }
 
-/* Subtle blueprint grid used behind hero and CTA */
+/* Subtle gold-tinted blueprint grid used behind hero and CTA */
 .bg-grid {
   background-image:
-    linear-gradient(to right, rgba(148, 163, 184, 0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+    linear-gradient(to right, rgba(212, 175, 55, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(212, 175, 55, 0.05) 1px, transparent 1px);
   background-size: 56px 56px;
 }
 

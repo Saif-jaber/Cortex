@@ -49,7 +49,7 @@ export default function FilePopup({ folders, initialFolder, onClose, onAddFile }
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-1/2 top-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-white/[0.08] bg-[#182032] shadow-2xl shadow-black/40">
+      <div className="fixed left-1/2 top-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-white/[0.08] bg-[#202024] shadow-2xl shadow-black/40">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
           <h3 className="text-sm font-semibold text-slate-200">Upload Files</h3>
           <button onClick={onClose} className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
@@ -63,7 +63,7 @@ export default function FilePopup({ folders, initialFolder, onClose, onAddFile }
             <label className="mb-1.5 block text-xs font-medium text-slate-400">Choose files from your computer</label>
             <div className="relative">
               <input type="file" id="file-upload" multiple onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))} className="hidden" />
-              <label htmlFor="file-upload" className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-white/[0.08] bg-white/[0.02] px-4 py-8 transition-all duration-200 hover:border-indigo-500/30 hover:bg-white/[0.04]">
+              <label htmlFor="file-upload" className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-white/[0.08] bg-white/[0.02] px-4 py-8 transition-all duration-200 hover:border-gold-400/30 hover:bg-white/[0.04]">
                 <svg className="h-8 w-8 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
@@ -90,7 +90,7 @@ export default function FilePopup({ folders, initialFolder, onClose, onAddFile }
             <label className="mb-1.5 block text-xs font-medium text-slate-400">Destination Folder</label>
             <div className="relative">
               <select value={selectedFolder} onChange={(e) => setSelectedFolder(e.target.value)}
-                className="w-full appearance-none rounded-lg bg-white/[0.04] px-3 py-2 pr-9 text-sm text-slate-200 outline-none ring-1 ring-white/[0.06] transition-all duration-200 focus:ring-indigo-500/30 [&>option]:bg-[#182032] [&>option]:text-slate-200">
+                className="w-full appearance-none rounded-lg bg-white/[0.04] px-3 py-2 pr-9 text-sm text-slate-200 outline-none ring-1 ring-white/[0.06] transition-all duration-200 focus:ring-gold-400/40 [&>option]:bg-[#202024] [&>option]:text-slate-200">
                 <option value="" disabled>Select a folder…</option>
                 {folders.map((f) => (
                   <option key={folderId(f)} value={folderId(f)}>{folderName(f)}</option>
@@ -107,7 +107,7 @@ export default function FilePopup({ folders, initialFolder, onClose, onAddFile }
         </div>
         <div className="flex justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
           <button onClick={onClose} className="rounded-lg px-4 py-2 text-xs font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">Cancel</button>
-          <button onClick={handleSubmit} disabled={selectedFiles.length === 0 || !selectedFolder || uploading} className="rounded-lg bg-indigo-500 px-4 py-2 text-xs font-medium text-white transition-all duration-150 hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed">
+          <button onClick={handleSubmit} disabled={selectedFiles.length === 0 || !selectedFolder || uploading} className="rounded-lg bg-gold-400 px-4 py-2 text-xs font-medium text-[#17171a] transition-all duration-150 hover:bg-gold-300 disabled:opacity-40 disabled:cursor-not-allowed">
             {uploading ? "Uploading…" : `Upload ${selectedFiles.length > 0 ? selectedFiles.length : ""}`.trim()}
           </button>
         </div>

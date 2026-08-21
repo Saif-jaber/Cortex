@@ -16,7 +16,7 @@ const VARIANTS = {
   },
   info: {
     icon: InfoIcon,
-    iconClass: "bg-sky-500/15 text-sky-400",
+    iconClass: "bg-gold-400/15 text-gold-300",
     ring: "ring-sky-500/20",
     title: "Heads up",
   },

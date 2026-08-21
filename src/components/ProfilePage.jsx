@@ -50,9 +50,9 @@ export default function ProfilePage({ foldersCount = 0, filesCount = 0, onOpenAp
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6 pb-24 sm:px-6 md:pb-8">
       {/* Header */}
-      <section className="rounded-2xl border border-white/[0.06] bg-[#131b2e] p-6 sm:p-8">
+      <section className="rounded-2xl border border-white/[0.06] bg-[#1a1a1e] p-6 sm:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-2xl font-bold text-white shadow-lg shadow-indigo-500/20">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 text-2xl font-bold text-[#17171a] shadow-lg shadow-gold-400/25">
             {initials(profile)}
           </div>
           <div className="min-w-0 flex-1">
@@ -87,7 +87,7 @@ export default function ProfilePage({ foldersCount = 0, filesCount = 0, onOpenAp
           </div>
           <div className="mt-5 flex justify-end">
             <button onClick={handleSave}
-              className="rounded-lg bg-indigo-500 px-4 py-2 text-xs font-medium text-white transition-colors duration-150 hover:bg-indigo-400">
+              className="rounded-lg bg-gold-400 px-4 py-2 text-xs font-medium text-[#17171a] transition-colors duration-150 hover:bg-gold-300">
               Save Changes
             </button>
           </div>
@@ -96,17 +96,17 @@ export default function ProfilePage({ foldersCount = 0, filesCount = 0, onOpenAp
         {/* Security */}
         <Card title="Security" subtitle="Manage your credentials">
           <button onClick={onOpenApiKey}
-            className="group flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-left transition-colors duration-150 hover:border-indigo-500/30 hover:bg-white/[0.04]">
+            className="group flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-left transition-colors duration-150 hover:border-gold-400/30 hover:bg-white/[0.04]">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/15 ring-1 ring-indigo-500/20">
-                <KeyIcon className="h-4 w-4 text-indigo-400" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold-400/15 ring-1 ring-gold-400/20">
+                <KeyIcon className="h-4 w-4 text-gold-400" />
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-200">API Key</p>
                 <p className="text-xs text-slate-500">Manage the key that powers AI features</p>
               </div>
             </div>
-            <ChevronRightIcon className="h-4 w-4 text-slate-600 transition-colors duration-150 group-hover:text-indigo-400" />
+            <ChevronRightIcon className="h-4 w-4 text-slate-600 transition-colors duration-150 group-hover:text-gold-400" />
           </button>
           <div className="mt-3 border-t border-white/[0.06] pt-4">
             <button onClick={handleSignOut}
@@ -130,7 +130,7 @@ export default function ProfilePage({ foldersCount = 0, filesCount = 0, onOpenAp
 }
 
 const inputCls =
-  "w-full rounded-lg bg-white/[0.04] px-3 py-2 text-sm text-slate-200 placeholder-slate-500 outline-none ring-1 ring-white/[0.06] transition-all duration-200 focus:ring-indigo-500/30";
+  "w-full rounded-lg bg-white/[0.04] px-3 py-2 text-sm text-slate-200 placeholder-slate-500 outline-none ring-1 ring-white/[0.06] transition-all duration-200 focus:ring-gold-400/40";
 
 function Stat({ label, value }) {
   return (
@@ -143,7 +143,7 @@ function Stat({ label, value }) {
 
 function Card({ title, subtitle, children }) {
   return (
-    <section className="rounded-2xl border border-white/[0.06] bg-[#131b2e] p-5 sm:p-6">
+    <section className="rounded-2xl border border-white/[0.06] bg-[#1a1a1e] p-5 sm:p-6">
       <h2 className="text-sm font-semibold text-slate-100">{title}</h2>
       <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
       <div className="mt-4">{children}</div>

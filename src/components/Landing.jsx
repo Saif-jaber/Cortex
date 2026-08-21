@@ -81,7 +81,7 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#0a0e1a] font-sans text-slate-300 antialiased">
+    <div className="min-h-screen overflow-x-clip bg-[#09090b] font-sans text-slate-300 antialiased">
       <ScrollToTopButton visible={showScrollTop} />
       <Nav menuOpen={menuOpen} setMenuOpen={setMenuOpen} onSignIn={openSignIn} onSignUp={openSignUp} />
       <Hero onSignUp={openSignUp} />
@@ -150,7 +150,7 @@ function Nav({ menuOpen, setMenuOpen, onSignIn, onSignUp }) {
           <button
             type="button"
             onClick={onSignUp}
-            className="group flex items-center gap-1.5 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-400 hover:shadow-indigo-500/40"
+            className="group flex items-center gap-1.5 rounded-xl bg-gold-400 px-4 py-2 text-sm font-semibold text-[#17171a] shadow-lg shadow-gold-400/25 transition-all duration-200 hover:bg-gold-300 hover:shadow-gold-400/30"
           >
             Get started
             <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -197,7 +197,7 @@ function Nav({ menuOpen, setMenuOpen, onSignIn, onSignUp }) {
                   setMenuOpen(false);
                   onSignUp();
                 }}
-                className="rounded-xl bg-indigo-500 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-indigo-400"
+                className="rounded-xl bg-gold-400 px-4 py-3 text-center text-sm font-semibold text-[#17171a] transition-colors hover:bg-gold-300"
               >
                 Get started free
               </button>
@@ -235,16 +235,16 @@ function Hero({ onSignUp }) {
     <section className="relative pt-40 pb-20 sm:pt-44 sm:pb-28">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
         <div className="bg-grid bg-grid-fade absolute inset-0" />
-        <div className="absolute -top-32 left-1/2 h-[480px] w-[820px] max-w-full -translate-x-1/2 rounded-full bg-indigo-600/20 blur-[120px]" />
-        <div className="absolute -right-40 top-40 h-[360px] w-[360px] rounded-full bg-sky-500/10 blur-[110px]" />
-        <div className="absolute -left-40 top-64 h-[360px] w-[360px] rounded-full bg-violet-600/10 blur-[110px]" />
+        <div className="absolute -top-32 left-1/2 h-[480px] w-[820px] max-w-full -translate-x-1/2 rounded-full bg-gold-400/15 blur-[120px]" />
+        <div className="absolute -right-40 top-40 h-[360px] w-[360px] rounded-full bg-gold-400/[0.08] blur-[110px]" />
+        <div className="absolute -left-40 top-64 h-[360px] w-[360px] rounded-full bg-gold-600/10 blur-[110px]" />
       </div>
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-3xl text-center">
           <Reveal>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] py-1.5 pl-1.5 pr-4 text-xs font-medium text-slate-300">
-              <span className="flex items-center gap-1 rounded-full bg-indigo-500/20 px-2.5 py-1 text-[11px] font-semibold text-indigo-300">
+              <span className="flex items-center gap-1 rounded-full bg-gold-400/15 px-2.5 py-1 text-[11px] font-semibold text-gold-300">
                 <SparklesIcon className="h-3 w-3" /> New
               </span>
               Cortex AI answers from your own files
@@ -255,7 +255,7 @@ function Hero({ onSignUp }) {
             <h1 className="mt-6 font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-slate-100 sm:text-6xl lg:text-7xl">
               Your documents hold the answers.
               <br />
-              <span className="bg-gradient-to-r from-sky-400 via-indigo-300 to-violet-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-gold-200 via-gold-300 to-gold-500 bg-clip-text text-transparent">
                 Now they answer back.
               </span>
             </h1>
@@ -273,7 +273,7 @@ function Hero({ onSignUp }) {
               <button
                 type="button"
                 onClick={onSignUp}
-                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-7 py-3.5 text-base font-semibold text-white shadow-xl shadow-indigo-500/30 transition-all duration-200 hover:bg-indigo-400 hover:shadow-indigo-500/45 sm:w-auto"
+                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gold-400 px-7 py-3.5 text-base font-semibold text-[#17171a] shadow-xl shadow-gold-400/25 transition-all duration-200 hover:bg-gold-300 hover:shadow-gold-400/35 sm:w-auto"
               >
                 Launch the app
                 <ArrowRightIcon className="h-4.5 w-4.5 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -306,7 +306,7 @@ function HeroMockup() {
   return (
     <div className="relative">
       <div aria-hidden="true" className="absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-8 h-full w-[85%] -translate-x-1/2 rounded-[36px] bg-indigo-500/20 blur-[90px]" />
+        <div className="absolute left-1/2 top-8 h-full w-[85%] -translate-x-1/2 rounded-[36px] bg-gold-400/15 blur-[90px]" />
       </div>
 
       <div className="relative overflow-hidden rounded-2xl border border-white/[0.1] bg-ink-800 shadow-2xl shadow-black/50 ring-1 ring-white/[0.04]">
@@ -320,13 +320,13 @@ function HeroMockup() {
             <LockIcon className="h-3 w-3" />
             cortex.local / my-library
           </div>
-          <div className="ml-auto hidden h-6 w-6 rounded-md bg-gradient-to-br from-indigo-500 to-violet-500 sm:block" />
+          <div className="ml-auto hidden h-6 w-6 rounded-md bg-gradient-to-br from-gold-400 to-gold-600 sm:block" />
         </div>
 
         <div className="flex">
           <div className="hidden w-12 flex-col items-center gap-2.5 border-r border-white/[0.07] py-4 sm:flex">
             <img src="/logo.svg" alt="" className="mb-1 h-5 w-5" />
-            <MiniIcon className="h-4.5 w-4.5 text-indigo-400" />
+            <MiniIcon className="h-4.5 w-4.5 text-gold-400" />
             <MiniIcon className="h-4.5 w-4.5 text-slate-600" type="db" />
             <MiniIcon className="h-4.5 w-4.5 text-slate-600" type="chat" />
             <MiniIcon className="h-4.5 w-4.5 text-slate-600" type="bars" />
@@ -348,7 +348,7 @@ function HeroMockup() {
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-5">
               <div className="rounded-xl border border-white/[0.07] bg-ink-700 p-4 lg:col-span-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-white">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 text-[#17171a]">
                     <SparklesIcon className="h-3.5 w-3.5" />
                   </div>
                   <div>
@@ -357,8 +357,8 @@ function HeroMockup() {
                   </div>
                 </div>
                 <p className="mt-3 text-xs leading-relaxed text-slate-300">
-                  The Q3 launch plan is driven by the <span className="rounded bg-indigo-500/20 px-1 text-indigo-300">design-notes.docx</span>{" "}
-                  spec and the roadmap in <span className="rounded bg-indigo-500/20 px-1 text-indigo-300">product-spec.pdf</span>. Marketing
+                  The Q3 launch plan is driven by the <span className="rounded bg-gold-400/15 px-1 text-gold-300">design-notes.docx</span>{" "}
+                  spec and the roadmap in <span className="rounded bg-gold-400/15 px-1 text-gold-300">product-spec.pdf</span>. Marketing
                   starts Aug 15, engineering ships on Sept 2.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
@@ -375,7 +375,7 @@ function HeroMockup() {
                 {[
                   { name: "General", meta: "3 files", tone: "from-emerald-500/15" },
                   { name: "Design", meta: "7 files", tone: "from-amber-500/15" },
-                  { name: "Reports", meta: "15 files", tone: "from-sky-500/15" },
+                  { name: "Reports", meta: "15 files", tone: "from-gold-400/15" },
                 ].map((f) => (
                   <div key={f.name} className="rounded-xl border border-white/[0.07] bg-ink-700 p-3">
                     <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br ${f.tone} to-transparent`}>
@@ -402,8 +402,8 @@ function HeroMockup() {
       </div>
 
       <div className="absolute -right-6 bottom-24 z-10 hidden items-center gap-2.5 rounded-xl border border-white/[0.1] bg-ink-600/90 px-3.5 py-2.5 shadow-xl shadow-black/40 backdrop-blur-md animate-float-slower xl:flex">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/15">
-          <UploadIcon className="h-3.5 w-3.5 text-sky-400" />
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold-400/15">
+          <UploadIcon className="h-3.5 w-3.5 text-gold-300" />
         </div>
         <div>
           <p className="text-xs font-semibold text-slate-200">Private local AI</p>
@@ -542,9 +542,9 @@ function FeatureCard({ feature, delay }) {
   const Icon = feature.icon;
   return (
     <Reveal delay={delay} className={feature.span}>
-      <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-ink-700 p-6 transition-all duration-300 hover:border-indigo-500/30 hover:bg-ink-600 hover:shadow-2xl hover:shadow-indigo-950/50">
+      <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-ink-700 p-6 transition-all duration-300 hover:border-gold-400/30 hover:bg-ink-600 hover:shadow-2xl hover:shadow-black/50">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-indigo-300 transition-colors duration-300 group-hover:text-indigo-200">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-gold-300 transition-colors duration-300 group-hover:text-gold-200">
             <Icon className="h-5 w-5" />
           </div>
           <h3 className="font-display text-lg font-bold tracking-tight text-slate-100">{feature.title}</h3>
@@ -565,8 +565,8 @@ function SearchVisual() {
         <SearchIcon className="h-3.5 w-3.5 text-slate-500" />
         <span className="text-xs text-slate-300">the launch timeline we agreed on last week</span>
       </div>
-      <div className="flex items-center gap-2 rounded-lg border border-indigo-500/25 bg-indigo-500/[0.08] px-3 py-2.5">
-        <SparklesIcon className="h-3.5 w-3.5 shrink-0 text-indigo-300" />
+      <div className="flex items-center gap-2 rounded-lg border border-gold-400/30 bg-gold-400/[0.08] px-3 py-2.5">
+        <SparklesIcon className="h-3.5 w-3.5 shrink-0 text-gold-300" />
         <div className="min-w-0">
           <p className="truncate text-[11px] font-medium text-slate-200">q3-report.docx: "timeline: engineering Sept 2, marketing Aug 15"</p>
           <p className="text-[10px] text-slate-500">98% match · cited source</p>
@@ -601,10 +601,10 @@ function FoldersVisual() {
   return (
     <div className="flex h-full flex-col justify-center gap-1.5 rounded-xl border border-white/[0.06] bg-ink-800/70 p-4">
       {[
-        { name: "General", depth: 0, tint: "text-indigo-400", files: "3 files" },
+        { name: "General", depth: 0, tint: "text-gold-400", files: "3 files" },
         { name: "Design", depth: 0, tint: "text-pink-400", files: "7 files" },
         { name: "Design / Brand", depth: 1, tint: "text-slate-500", files: "2 files" },
-        { name: "Reports", depth: 0, tint: "text-sky-400", files: "15 files" },
+        { name: "Reports", depth: 0, tint: "text-gold-300", files: "15 files" },
       ].map((f) => (
         <div key={f.name} className="flex items-center gap-2" style={{ paddingLeft: f.depth * 16 }}>
           <FolderIcon className={`h-3.5 w-3.5 shrink-0 ${f.tint}`} />
@@ -619,14 +619,14 @@ function FoldersVisual() {
 function ChatVisual() {
   return (
     <div className="flex h-full flex-col justify-center gap-2.5 rounded-xl border border-white/[0.06] bg-ink-800/70 p-4">
-      <div className="ml-auto max-w-[70%] rounded-xl rounded-br-sm bg-indigo-500/15 px-3 py-2 text-[11px] text-slate-200">
+      <div className="ml-auto max-w-[70%] rounded-xl rounded-br-sm bg-gold-400/15 px-3 py-2 text-[11px] text-slate-200">
         Which vendors should we shortlist for Q3?
       </div>
       <div className="flex items-start gap-2 max-w-[85%] rounded-xl rounded-bl-sm bg-ink-900/70 px-3 py-2.5">
-        <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-indigo-300" />
+        <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold-300" />
         <div>
           <p className="text-[11px] leading-relaxed text-slate-300">
-            Based on the RFP notes and vendor comparison in <span className="text-indigo-300">vendor-eval.docx</span>, Apex and Orbit lead on security and cost.
+            Based on the RFP notes and vendor comparison in <span className="text-gold-300">vendor-eval.docx</span>, Apex and Orbit lead on security and cost.
           </p>
           <p className="mt-1 text-[9px] text-slate-500">Sources: 2 documents</p>
         </div>
@@ -639,7 +639,7 @@ function WorkspaceVisual() {
   return (
     <div className="flex h-full flex-col justify-center gap-3 rounded-xl border border-white/[0.06] bg-ink-800/70 p-4">
       <div className="flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-[10px] font-bold text-white">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-gold-400 to-gold-600 text-[10px] font-bold text-[#17171a]">
           Y
         </div>
         <div>
@@ -705,8 +705,8 @@ function ProductShowcase({ onSignUp }) {
                 "Semantic retrieval across PDF, Word and PowerPoint files",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3 text-[15px] text-slate-300">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-500/15">
-                    <CheckIcon className="h-3 w-3 text-indigo-300" />
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold-400/15">
+                    <CheckIcon className="h-3 w-3 text-gold-300" />
                   </span>
                   {item}
                 </li>
@@ -715,7 +715,7 @@ function ProductShowcase({ onSignUp }) {
             <button
               type="button"
               onClick={onSignUp}
-              className="group mt-9 inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-400"
+              className="group mt-9 inline-flex items-center gap-2 rounded-xl bg-gold-400 px-6 py-3 text-sm font-semibold text-[#17171a] shadow-lg shadow-gold-400/25 transition-all duration-200 hover:bg-gold-300"
             >
               Open the app
               <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -734,11 +734,11 @@ function ProductShowcase({ onSignUp }) {
 function AnswerPanel() {
   return (
     <div className="relative">
-      <div aria-hidden="true" className="absolute -inset-6 -z-10 rounded-[32px] bg-gradient-to-br from-indigo-500/15 via-violet-500/10 to-sky-500/15 blur-2xl" />
+      <div aria-hidden="true" className="absolute -inset-6 -z-10 rounded-[32px] bg-gradient-to-br from-gold-400/15 via-gold-600/10 to-gold-400/15 blur-2xl" />
       <div className="overflow-hidden rounded-2xl border border-white/[0.1] bg-ink-800 shadow-2xl shadow-black/50">
         <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-white">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 text-[#17171a]">
               <SparklesIcon className="h-3 w-3" />
             </div>
             <span className="text-xs font-semibold text-slate-200">Ask Cortex</span>
@@ -756,7 +756,7 @@ function AnswerPanel() {
 
           <div className="rounded-xl border border-white/[0.07] bg-ink-700 p-4">
             <p className="text-[13px] leading-relaxed text-slate-300">
-              New hires start with the welcome checklist in <span className="rounded bg-indigo-500/20 px-1 text-[11px] text-indigo-300">onboarding-guide.docx</span>,
+              New hires start with the welcome checklist in <span className="rounded bg-gold-400/15 px-1 text-[11px] text-gold-300">onboarding-guide.docx</span>,
               then pick their tools per the IT policy. Designers also complete brand training before joining design review.
             </p>
 
@@ -764,7 +764,7 @@ function AnswerPanel() {
               {[
                 { name: "onboarding-guide.docx", meta: "Word · section 1", accent: "bg-emerald-500/15 text-emerald-400" },
                 { name: "launch-plan.pptx", meta: "PPTX · slide 2", accent: "bg-pink-500/15 text-pink-400" },
-                { name: "team-standup-notes.pdf", meta: "PDF · page 1", accent: "bg-sky-500/15 text-sky-400" },
+                { name: "team-standup-notes.pdf", meta: "PDF · page 1", accent: "bg-gold-400/15 text-gold-300" },
               ].map((s) => (
                 <div key={s.name} className="flex items-center gap-2.5 rounded-lg border border-white/[0.06] bg-ink-800/80 px-3 py-2.5 transition-colors hover:bg-ink-800">
                   <FileGlyph className="h-4 w-4 text-slate-500" />
@@ -811,9 +811,9 @@ function HowItWorks() {
             return (
               <Reveal key={step.title} delay={i * 120}>
                 <div className="relative">
-                  <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.1] bg-ink-700 text-indigo-300 shadow-lg shadow-black/30">
+                  <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.1] bg-ink-700 text-gold-300 shadow-lg shadow-black/30">
                     <Icon className="h-5 w-5" />
-                    <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-bold text-white">
+                    <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-gold-400 text-[10px] font-bold text-[#17171a]">
                       {i + 1}
                     </span>
                   </div>
@@ -861,8 +861,8 @@ function Pricing({ onSignUp }) {
 
         <div className="mx-auto mt-12 max-w-lg">
           <Reveal>
-            <div className="relative flex flex-col rounded-2xl border border-indigo-500/40 bg-ink-600 p-7 shadow-2xl shadow-indigo-950/40 lg:p-9">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 px-3.5 py-1 text-[11px] font-bold text-white shadow-lg shadow-indigo-500/30">
+            <div className="relative flex flex-col rounded-2xl border border-gold-400/40 bg-ink-600 p-7 shadow-2xl shadow-black/40 lg:p-9">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-gold-400 to-gold-600 px-3.5 py-1 text-[11px] font-bold text-[#17171a] shadow-lg shadow-gold-400/25">
                 Self-hosted
               </span>
               <h3 className="font-display text-lg font-bold text-slate-100">Cortex</h3>
@@ -874,8 +874,8 @@ function Pricing({ onSignUp }) {
               <ul className="mt-7 flex-1 space-y-3">
                 {PRICING_FEATURES.map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-slate-300">
-                    <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-indigo-500/15">
-                      <CheckIcon className="h-2.5 w-2.5 text-indigo-300" />
+                    <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-gold-400/15">
+                      <CheckIcon className="h-2.5 w-2.5 text-gold-300" />
                     </span>
                     {f}
                   </li>
@@ -884,7 +884,7 @@ function Pricing({ onSignUp }) {
               <button
                 type="button"
                 onClick={onSignUp}
-                className="mt-8 block w-full rounded-xl bg-indigo-500 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition-all duration-200 hover:bg-indigo-400"
+                className="mt-8 block w-full rounded-xl bg-gold-400 py-3 text-center text-sm font-semibold text-[#17171a] shadow-lg shadow-gold-400/25 transition-all duration-200 hover:bg-gold-300"
               >
                 Create your free account
               </button>
@@ -920,7 +920,7 @@ function Faq() {
             const isOpen = open === i;
             return (
               <Reveal key={item.q} delay={i * 50}>
-                <div className={`overflow-hidden rounded-2xl border transition-colors duration-300 ${isOpen ? "border-indigo-500/30 bg-ink-700" : "border-white/[0.07] bg-ink-700/60 hover:border-white/[0.14]"}`}>
+                <div className={`overflow-hidden rounded-2xl border transition-colors duration-300 ${isOpen ? "border-gold-400/30 bg-ink-700" : "border-white/[0.07] bg-ink-700/60 hover:border-white/[0.14]"}`}>
                   <button
                     onClick={() => setOpen(isOpen ? -1 : i)}
                     aria-expanded={isOpen}
@@ -953,9 +953,9 @@ function FinalCta({ onSignUp }) {
           <div className="relative overflow-hidden rounded-3xl border border-white/[0.1] bg-ink-800 px-6 py-16 text-center sm:px-12 sm:py-24">
             <div aria-hidden="true" className="pointer-events-none absolute inset-0">
               <div className="bg-grid absolute inset-0 opacity-60" />
-              <div className="absolute left-1/2 top-0 h-[300px] w-[600px] max-w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/25 blur-[100px]" />
-              <div className="absolute bottom-0 left-8 h-[200px] w-[200px] rounded-full bg-sky-500/15 blur-[80px]" />
-              <div className="absolute bottom-0 right-8 h-[200px] w-[200px] rounded-full bg-violet-500/15 blur-[80px]" />
+              <div className="absolute left-1/2 top-0 h-[300px] w-[600px] max-w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold-400/20 blur-[100px]" />
+              <div className="absolute bottom-0 left-8 h-[200px] w-[200px] rounded-full bg-gold-400/15 blur-[80px]" />
+              <div className="absolute bottom-0 right-8 h-[200px] w-[200px] rounded-full bg-gold-600/12 blur-[80px]" />
             </div>
             <div className="relative">
               <h2 className="mx-auto max-w-2xl font-display text-3xl font-extrabold leading-tight tracking-tight text-slate-100 sm:text-5xl">
@@ -968,7 +968,7 @@ function FinalCta({ onSignUp }) {
                 <button
                   type="button"
                   onClick={onSignUp}
-                  className="group flex w-full items-center justify-center gap-2 rounded-xl bg-white px-7 py-3.5 text-base font-semibold text-ink-900 transition-colors duration-200 hover:bg-slate-200 sm:w-auto"
+                  className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gold-400 px-7 py-3.5 text-base font-semibold text-[#17171a] shadow-xl shadow-gold-400/20 transition-colors duration-200 hover:bg-gold-300 sm:w-auto"
                 >
                   Get started free
                   <ArrowRightIcon className="h-4.5 w-4.5 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -1059,7 +1059,7 @@ function Footer() {
 
 function SectionKicker({ children }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-indigo-500/25 bg-indigo-500/[0.08] px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-indigo-300">
+    <span className="inline-flex items-center gap-2 rounded-full border border-gold-400/30 bg-gold-400/[0.08] px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-gold-300">
       {children}
     </span>
   );

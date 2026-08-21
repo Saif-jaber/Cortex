@@ -225,9 +225,9 @@ export default function Dashboard({ onExitHome }) {
     : files;
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-[#0a0e1a] font-sans text-slate-100">
+    <div className="flex h-dvh w-full overflow-hidden bg-[#09090b] font-sans text-slate-100">
       {/* Left Icon Rail */}
-      <aside className="relative hidden w-14 shrink-0 flex-col items-center border-r border-white/[0.06] bg-[#0d1220] py-5 md:flex sm:w-16">
+      <aside className="relative hidden w-14 shrink-0 flex-col items-center border-r border-white/[0.06] bg-[#121214] py-5 md:flex sm:w-16">
         <div className="mb-8 flex h-10 w-10 items-center justify-center">
           {onExitHome ? (
             <button onClick={onExitHome} aria-label="Back to home" title="Back to home" className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors hover:bg-white/[0.06]">
@@ -243,7 +243,7 @@ export default function Dashboard({ onExitHome }) {
             return (
               <button key={item.id} onClick={() => setActiveNav(item.id)} aria-label={item.label}
                 className={`group relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 ${isActive ? "bg-white/[0.08] text-slate-100" : "text-slate-500 hover:bg-white/[0.04] hover:text-slate-300"}`}>
-                {isActive && <span className="absolute -left-[13px] top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r-full bg-indigo-400" />}
+                {isActive && <span className="absolute -left-[13px] top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r-full bg-gold-400" />}
                 <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} />
               </button>
             );
@@ -252,7 +252,7 @@ export default function Dashboard({ onExitHome }) {
       </aside>
 
       {/* Second Sidebar */}
-      <aside className="hidden w-[280px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0d1220] lg:flex">
+      <aside className="hidden w-[280px] shrink-0 flex-col border-r border-white/[0.06] bg-[#121214] lg:flex">
         {activeNav === "chat" ? (
           <ChatSidebarPanel closeButton={null} onOpenApiKey={() => setShowApiKey(true)}
             chats={chatSessions} activeChatId={activeChatId} onSelectChat={handleSelectChat}
@@ -272,9 +272,9 @@ export default function Dashboard({ onExitHome }) {
       </aside>
 
       {/* Main Content */}
-      <main className={`flex flex-1 flex-col bg-[#0f1525] ${activeNav === "chat" ? "overflow-hidden" : "overflow-y-auto scroll-smooth"}`}>
+      <main className={`flex flex-1 flex-col bg-[#09090b] ${activeNav === "chat" ? "overflow-hidden" : "overflow-y-auto scroll-smooth"}`}>
         {/* Top Bar */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] bg-[#0f1525]/80 backdrop-blur-xl px-2 sm:px-6 py-3">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] bg-[#09090b]/80 backdrop-blur-xl px-2 sm:px-6 py-3">
           <div className="relative flex min-w-0 items-center gap-1">
             <button onClick={() => setSidebarOpen(true)} aria-label="Open navigation" aria-expanded={sidebarOpen}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200 lg:hidden">
@@ -296,7 +296,7 @@ export default function Dashboard({ onExitHome }) {
             {breadcrumbOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setBreadcrumbOpen(false)} />
-                <div className="absolute left-0 top-full z-20 mt-1.5 w-60 overflow-hidden rounded-xl border border-white/[0.08] bg-[#182032] py-1.5 shadow-2xl shadow-black/40">
+                <div className="absolute left-0 top-full z-20 mt-1.5 w-60 overflow-hidden rounded-xl border border-white/[0.08] bg-[#202024] py-1.5 shadow-2xl shadow-black/40">
                   <div className="px-3 pb-2">
                     <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Folders</span>
                   </div>
@@ -307,7 +307,7 @@ export default function Dashboard({ onExitHome }) {
                         className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/[0.06]">
                         <FolderSmallIcon className="h-4 w-4 shrink-0 text-slate-500" />
                         <span className="flex-1 truncate">{folderName(f)}</span>
-                        {isSel && <CheckIcon className="h-3.5 w-3.5 shrink-0 text-indigo-400" />}
+                        {isSel && <CheckIcon className="h-3.5 w-3.5 shrink-0 text-gold-400" />}
                       </button>
                     );
                   })}
@@ -321,7 +321,7 @@ export default function Dashboard({ onExitHome }) {
             </button>
             <div className="mx-1 hidden h-5 w-px bg-white/[0.08] sm:block" />
             <button className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 transition-all duration-150 hover:bg-white/[0.06]">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-[11px] font-bold text-white shadow-lg shadow-indigo-500/20">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 text-[11px] font-bold text-[#17171a] shadow-lg shadow-gold-400/25">
                 {`${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "U"}
               </div>
               <span className="text-xs font-medium text-slate-300 hidden md:block">{user.firstName || "User"}</span>
@@ -393,7 +393,7 @@ export default function Dashboard({ onExitHome }) {
                 <>
                   <div className="space-y-2 md:hidden">
                     {visibleFiles.map((file) => (
-                      <div key={file.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#131b2e] px-3.5 py-3 transition-colors duration-150 hover:bg-[#182032]">
+                      <div key={file.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#1a1a1e] px-3.5 py-3 transition-colors duration-150 hover:bg-[#202024]">
                         <FileTypeIcon type={file.type} />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-slate-200">{file.name}</p>
@@ -407,7 +407,7 @@ export default function Dashboard({ onExitHome }) {
                     ))}
                   </div>
 
-                  <div className="hidden overflow-x-auto rounded-xl border border-white/[0.06] bg-[#131b2e] md:block">
+                  <div className="hidden overflow-x-auto rounded-xl border border-white/[0.06] bg-[#1a1a1e] md:block">
                     <div className="grid grid-cols-[1fr_auto_auto_auto] items-center border-b border-white/[0.06] px-5 py-3">
                       <span className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Name</span>
                       <span className="w-24 text-right text-[11px] font-semibold tracking-wider text-slate-500 uppercase">Size</span>
@@ -456,7 +456,7 @@ export default function Dashboard({ onExitHome }) {
           onClick={() => setSidebarOpen(false)} />
         <aside aria-label="Knowledge base navigation" aria-hidden={!sidebarOpen}
           style={{ transition: "transform 300ms cubic-bezier(0.32, 0.72, 0.35, 1), visibility 300ms" }}
-          className={`absolute left-0 top-0 flex h-full w-[280px] max-w-[85vw] flex-col border-r border-white/[0.06] bg-[#0d1220] shadow-2xl shadow-black/50 ${sidebarOpen ? "visible translate-x-0" : "invisible -translate-x-full"}`}>
+          className={`absolute left-0 top-0 flex h-full w-[280px] max-w-[85vw] flex-col border-r border-white/[0.06] bg-[#121214] shadow-2xl shadow-black/50 ${sidebarOpen ? "visible translate-x-0" : "invisible -translate-x-full"}`}>
           {activeNav === "chat" ? (
             <ChatSidebarPanel
               closeButton={
@@ -494,15 +494,15 @@ export default function Dashboard({ onExitHome }) {
 
       {/* Mobile Bottom Tab Bar */}
       <nav aria-label="Main navigation" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-white/[0.06] bg-[#0d1220]/90 backdrop-blur-xl md:hidden">
+        className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-white/[0.06] bg-[#121214]/90 backdrop-blur-xl md:hidden">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeNav === item.id;
           return (
             <button key={item.id} onClick={() => setActiveNav(item.id)} aria-label={item.label}
-              className={`group flex flex-1 flex-col items-center gap-1 pt-2.5 pb-2 transition-colors duration-200 ${isActive ? "text-indigo-400" : "text-slate-500 hover:text-slate-300"}`}>
+              className={`group flex flex-1 flex-col items-center gap-1 pt-2.5 pb-2 transition-colors duration-200 ${isActive ? "text-gold-400" : "text-slate-500 hover:text-slate-300"}`}>
               <Icon className="h-5 w-5" strokeWidth={1.8} />
-              <span className={`text-[10px] font-medium ${isActive ? "text-indigo-300" : "text-slate-500"}`}>{item.mobile}</span>
+              <span className={`text-[10px] font-medium ${isActive ? "text-gold-300" : "text-slate-500"}`}>{item.mobile}</span>
             </button>
           );
         })}
@@ -528,7 +528,7 @@ function SidebarPanel({ closeButton, activeTab, setActiveTab, searchQuery, setSe
       </div>
 
       <div className="px-4 pb-3">
-        <div className="flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:bg-white/[0.06] focus-within:ring-indigo-500/30">
+        <div className="flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:bg-white/[0.06] focus-within:ring-gold-400/40">
           <SearchIcon className="h-4 w-4 shrink-0 text-slate-500" />
           <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 outline-none" />
@@ -586,7 +586,7 @@ function ChatSidebarPanel({ closeButton, onOpenApiKey, chats, activeChatId, onSe
       </div>
 
       <div className="px-4 pb-3">
-        <div className="flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:bg-white/[0.06] focus-within:ring-indigo-500/30">
+        <div className="flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:bg-white/[0.06] focus-within:ring-gold-400/40">
           <SearchIcon className="h-4 w-4 shrink-0 text-slate-500" />
           <input type="text" placeholder="Search chats..." value={query} onChange={(e) => setQuery(e.target.value)}
             className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 outline-none" />
@@ -602,7 +602,7 @@ function ChatSidebarPanel({ closeButton, onOpenApiKey, chats, activeChatId, onSe
             <div key={chat._id} className="group relative">
               <button onClick={() => onSelectChat(chat._id)}
                 className={`flex w-full items-start gap-2.5 rounded-lg px-2 py-2.5 text-left transition-all duration-150 ${activeChatId === chat._id ? "bg-white/[0.07] text-slate-100" : "hover:bg-white/[0.04]"}`}>
-                <ChatIcon className={`mt-0.5 h-4 w-4 shrink-0 ${activeChatId === chat._id ? "text-indigo-400" : "text-slate-600 group-hover:text-slate-400"}`} strokeWidth={1.8} />
+                <ChatIcon className={`mt-0.5 h-4 w-4 shrink-0 ${activeChatId === chat._id ? "text-gold-400" : "text-slate-600 group-hover:text-slate-400"}`} strokeWidth={1.8} />
                 <div className="min-w-0 max-w-[calc(100%-2rem)] flex-1">
                   <span className={`block truncate text-[13px] font-medium ${activeChatId === chat._id ? "text-slate-100" : "text-slate-200 group-hover:text-slate-100"}`}>{chat.title}</span>
                 </div>
@@ -618,7 +618,7 @@ function ChatSidebarPanel({ closeButton, onOpenApiKey, chats, activeChatId, onSe
 
       <div className="border-t border-white/[0.06] p-2.5 sm:p-3">
         <button onClick={onOpenApiKey}
-          className="flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-[13px] font-medium text-slate-300 transition-all duration-150 hover:border-indigo-500/30 hover:bg-white/[0.06] hover:text-slate-100 sm:px-3.5">
+          className="flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-[13px] font-medium text-slate-300 transition-all duration-150 hover:border-gold-400/30 hover:bg-white/[0.06] hover:text-slate-100 sm:px-3.5">
           <span className="flex items-center gap-2.5">
             <KeyIcon className="h-4 w-4 text-slate-500" />
             API Key
@@ -636,7 +636,7 @@ function FolderTreeNode({ folder, selectedFolder, onSelect }) {
     <div className="overflow-hidden">
       <button onClick={() => onSelect(folderId(folder))}
         className={`group flex w-full items-center gap-2 rounded-lg py-1.5 pl-2 pr-2 text-left text-sm transition-all duration-200 ${isSelected ? "bg-white/[0.07] text-slate-100" : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-300"}`}>
-        <FolderSmallIcon className={`h-4 w-4 shrink-0 transition-colors duration-200 ${isSelected ? "text-indigo-400" : "text-slate-600"}`} />
+        <FolderSmallIcon className={`h-4 w-4 shrink-0 transition-colors duration-200 ${isSelected ? "text-gold-400" : "text-slate-600"}`} />
         <span className="flex-1 truncate">{folderName(folder)}</span>
       </button>
     </div>
@@ -648,10 +648,10 @@ function FolderCard({ folder, fileCount, selected, onSelect, onDelete }) {
   return (
     <div className="group relative">
       <button onClick={onSelect}
-        className={`flex w-full flex-col items-center rounded-xl border p-4 transition-colors duration-150 sm:p-5 ${selected ? "border-indigo-500/40 bg-[#182032] ring-1 ring-indigo-500/20" : "border-white/[0.06] bg-[#131b2e] hover:bg-[#182032]"}`}>
+        className={`flex w-full flex-col items-center rounded-xl border p-4 transition-colors duration-150 sm:p-5 ${selected ? "border-gold-400/40 bg-[#202024] ring-1 ring-gold-400/20" : "border-white/[0.06] bg-[#1a1a1e] hover:bg-[#202024]"}`}>
         <div className="relative mb-3 sm:mb-4">
           {folder.peek === "pdf" && (
-            <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a2540] shadow-md">
+            <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a1a1e] shadow-md">
               <svg className="h-3.5 w-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
@@ -659,7 +659,7 @@ function FolderCard({ folder, fileCount, selected, onSelect, onDelete }) {
             </div>
           )}
           {folder.peek === "doc" && (
-            <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a2540] shadow-md">
+            <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a1a1e] shadow-md">
               <svg className="h-3.5 w-3.5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
                 <path d="M8 13h2" /><path d="M8 17h6" />
@@ -667,7 +667,7 @@ function FolderCard({ folder, fileCount, selected, onSelect, onDelete }) {
             </div>
           )}
           {folder.peek === "figma" && (
-            <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a2540] shadow-md">
+            <div className="absolute -right-2 -top-1 flex h-7 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-[#1a1a1e] shadow-md">
               <svg className="h-3.5 w-3.5 text-pink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M12 2a3 3 0 00-3 3v4a3 3 0 006 0V5a3 3 0 00-3-3z" />
@@ -707,7 +707,7 @@ function ConfirmDialog({ title, message, variant, onConfirm, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-white/[0.1] bg-[#131b2e] shadow-2xl shadow-black/60">
+      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-white/[0.1] bg-[#1a1a1e] shadow-2xl shadow-black/60">
         <div className="px-5 pt-5 pb-0">
           <div className="flex items-center gap-3">
             <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${variant === "error" ? "bg-red-500/10" : "bg-red-500/10"}`}>
@@ -763,7 +763,7 @@ function EmptyState({ title, hint, actionLabel, onAction }) {
       <p className="mt-3 text-sm font-medium text-slate-300">{title}</p>
       <p className="mt-1 max-w-xs text-xs text-slate-500">{hint}</p>
       <button onClick={onAction}
-        className="mt-4 flex items-center gap-1.5 rounded-lg bg-indigo-500 px-3.5 py-2 text-xs font-medium text-white transition-colors duration-150 hover:bg-indigo-400">
+        className="mt-4 flex items-center gap-1.5 rounded-lg bg-gold-400 px-3.5 py-2 text-xs font-medium text-[#17171a] transition-colors duration-150 hover:bg-gold-300">
         <PlusIcon className="h-3.5 w-3.5" /> {actionLabel}
       </button>
     </div>
@@ -928,16 +928,16 @@ function FolderSmallIcon({ className }) {
 function FolderLargeIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 64 64" fill="none">
-      <path d="M8 16a4 4 0 014-4h14l6 8h20a4 4 0 014 4v24a4 4 0 01-4 4H12a4 4 0 01-4-4V16z" fill="url(#folderGrad)" stroke="rgba(148,163,184,0.12)" strokeWidth="2" strokeLinejoin="round" />
-      <path d="M8 24h48v24a4 4 0 01-4 4H12a4 4 0 01-4-4V24z" fill="url(#folderGrad2)" stroke="rgba(148,163,184,0.12)" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M8 16a4 4 0 014-4h14l6 8h20a4 4 0 014 4v24a4 4 0 01-4 4H12a4 4 0 01-4-4V16z" fill="url(#folderGrad)" stroke="rgba(212,175,55,0.18)" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M8 24h48v24a4 4 0 01-4 4H12a4 4 0 01-4-4V24z" fill="url(#folderGrad2)" stroke="rgba(212,175,55,0.18)" strokeWidth="2" strokeLinejoin="round" />
       <defs>
         <linearGradient id="folderGrad" x1="8" y1="12" x2="56" y2="32">
-          <stop stopColor="#94a3b8" />
-          <stop offset="1" stopColor="#64748b" />
+          <stop stopColor="#d4af37" />
+          <stop offset="1" stopColor="#96791e" />
         </linearGradient>
         <linearGradient id="folderGrad2" x1="8" y1="24" x2="56" y2="56">
-          <stop stopColor="#64748b" />
-          <stop offset="1" stopColor="#475569" />
+          <stop stopColor="#b9962e" />
+          <stop offset="1" stopColor="#7a6319" />
         </linearGradient>
       </defs>
     </svg>
@@ -995,11 +995,11 @@ function ApiKeyModal({ onClose }) {
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-1/2 top-1/2 z-40 flex max-h-[88vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#182032] shadow-2xl shadow-black/40">
+      <div className="fixed left-1/2 top-1/2 z-40 flex max-h-[88vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#202024] shadow-2xl shadow-black/40">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-4 sm:px-5">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/15 ring-1 ring-indigo-500/20">
-              <KeyIcon className="h-4 w-4 text-indigo-400" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold-400/15 ring-1 ring-gold-400/20">
+              <KeyIcon className="h-4 w-4 text-gold-400" />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-slate-200">API Key</h3>
@@ -1030,7 +1030,7 @@ function ApiKeyModal({ onClose }) {
             <label className="mb-1.5 block text-xs font-medium text-slate-400">New Key</label>
             <div className="relative">
               <input type={showNew ? "text" : "password"} value={newKey} onChange={(e) => setNewKey(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="Enter a new key..." autoFocus
-                className="w-full rounded-lg bg-white/[0.04] px-3 py-2 pr-10 text-sm text-slate-200 placeholder-slate-500 outline-none ring-1 ring-white/[0.06] transition-all duration-200 focus:ring-indigo-500/30" />
+                className="w-full rounded-lg bg-white/[0.04] px-3 py-2 pr-10 text-sm text-slate-200 placeholder-slate-500 outline-none ring-1 ring-white/[0.06] transition-all duration-200 focus:ring-gold-400/40" />
               <button type="button" onClick={() => setShowNew(!showNew)} aria-label={showNew ? "Hide new key" : "Show new key"}
                 className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-300">
                 <EyeIcon className="h-4 w-4" />
@@ -1043,7 +1043,7 @@ function ApiKeyModal({ onClose }) {
 
         <div className="flex flex-col-reverse gap-2 border-t border-white/[0.06] px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:flex-row sm:justify-end sm:px-5 sm:pb-4">
           <button onClick={onClose} className="w-full rounded-lg px-4 py-2.5 text-xs font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200 sm:w-auto sm:py-2">Cancel</button>
-          <button onClick={handleSubmit} disabled={!newKey.trim()} className="w-full rounded-lg bg-indigo-500 px-4 py-2.5 text-xs font-medium text-white transition-all duration-150 hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed sm:w-auto sm:py-2">
+          <button onClick={handleSubmit} disabled={!newKey.trim()} className="w-full rounded-lg bg-gold-400 px-4 py-2.5 text-xs font-medium text-[#17171a] transition-all duration-150 hover:bg-gold-300 disabled:opacity-40 disabled:cursor-not-allowed sm:w-auto sm:py-2">
             Save Key
           </button>
         </div>
@@ -1090,7 +1090,7 @@ function renderInline(text) {
     }
     if (part.startsWith("`") && part.endsWith("`")) {
       return (
-        <code key={i} className="rounded-md bg-white/[0.07] px-1.5 py-0.5 font-mono text-[12.5px] text-indigo-300">
+        <code key={i} className="rounded-md bg-white/[0.07] px-1.5 py-0.5 font-mono text-[12.5px] text-gold-300">
           {part.slice(1, -1)}
         </code>
       );
@@ -1100,7 +1100,7 @@ function renderInline(text) {
       if (match) {
         return (
           <a key={i} href={match[2]} target="_blank" rel="noopener noreferrer"
-            className="text-indigo-400 underline decoration-indigo-400/30 underline-offset-2 transition-colors hover:text-indigo-300 hover:decoration-indigo-300/50">
+            className="text-gold-400 underline decoration-gold-400/30 underline-offset-2 transition-colors hover:text-gold-300 hover:decoration-gold-300/50">
             {match[1]}
           </a>
         );
@@ -1113,6 +1113,7 @@ function renderInline(text) {
 function renderTextBlock(lines, startIdx) {
   const elements = [];
   let i = 0;
+  let isFirstBlock = true;
 
   while (i < lines.length) {
     const trimmed = lines[i].trim();
@@ -1134,12 +1135,15 @@ function renderTextBlock(lines, startIdx) {
         5: "text-sm font-medium mt-2 mb-1 text-slate-200",
         6: "text-xs font-medium mt-2 mb-1 text-slate-300",
       };
+      let sizeCls = sizes[level] || sizes[3];
+      if (isFirstBlock) sizeCls = sizeCls.replace(/\bmt-[0-9.]+/, "mt-0");
       elements.push(
-        <Tag key={startIdx + i} className={sizes[level] || sizes[3]}>
+        <Tag key={startIdx + i} className={sizeCls}>
           {renderInline(headingMatch[2])}
         </Tag>
       );
       i++;
+      isFirstBlock = false;
       continue;
     }
 
@@ -1148,6 +1152,7 @@ function renderTextBlock(lines, startIdx) {
         <hr key={startIdx + i} className="my-3 border-white/[0.08]" />
       );
       i++;
+      isFirstBlock = false;
       continue;
     }
 
@@ -1160,12 +1165,13 @@ function renderTextBlock(lines, startIdx) {
         i++;
       }
       elements.push(
-        <blockquote key={startIdx + i} className="my-2 border-l-2 border-indigo-400/40 pl-3 text-sm italic text-slate-400">
+        <blockquote key={startIdx + i} className="my-2 border-l-2 border-gold-400/40 pl-3 text-sm italic text-slate-400">
           {quoteLines.map((ql, qi) => (
             <p key={qi} className={qi > 0 ? "mt-1" : ""}>{renderInline(ql)}</p>
           ))}
         </blockquote>
       );
+      isFirstBlock = false;
       continue;
     }
 
@@ -1179,12 +1185,13 @@ function renderTextBlock(lines, startIdx) {
         <div key={startIdx + i} className="my-1.5 space-y-1 pl-0.5">
           {listItems.map((item, li) => (
             <div key={li} className="flex items-start gap-2.5">
-              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
+              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-gold-400" />
               <span className="text-sm leading-relaxed">{renderInline(item)}</span>
             </div>
           ))}
         </div>
       );
+      isFirstBlock = false;
       continue;
     }
 
@@ -1199,12 +1206,13 @@ function renderTextBlock(lines, startIdx) {
         <div key={startIdx + i} className="my-1.5 space-y-1 pl-0.5">
           {listItems.map((item, li) => (
             <div key={li} className="flex items-start gap-2.5">
-              <span className="mt-0.5 w-5 shrink-0 text-right font-mono text-[13px] font-medium text-indigo-400/70">{item.num}.</span>
+              <span className="mt-0.5 w-5 shrink-0 text-right font-mono text-[13px] font-medium text-gold-400/70">{item.num}.</span>
               <span className="text-sm leading-relaxed">{renderInline(item.text)}</span>
             </div>
           ))}
         </div>
       );
+      isFirstBlock = false;
       continue;
     }
 
@@ -1221,6 +1229,7 @@ function renderTextBlock(lines, startIdx) {
         ))}
       </p>
     );
+    isFirstBlock = false;
   }
 
   return elements;
@@ -1292,7 +1301,7 @@ const HL_RULES = [
 
 const HL_KEYWORD = "#c084fc";
 const HL_STRING = "#86efac";
-const HL_COMMENT = "#64748b";
+const HL_COMMENT = "#808080";
 const HL_NUMBER = "#fbbf24";
 const HL_BUILTIN = "#67e8f9";
 const HL_OPERATOR = "#f472b6";
@@ -1389,16 +1398,25 @@ function CodeBlock({ language, code }) {
 
 function BotAvatar() {
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1a2540] ring-1 ring-white/[0.08]">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#26262b] to-[#96791e]/40 ring-1 ring-gold-400/25 shadow-[0_0_14px_rgba(212,175,55,0.12)]">
       <img src="/logo.svg" alt="Cortex AI" className="h-5 w-5" />
     </div>
   );
 }
 
+function getUserInitials() {
+  try {
+    const u = JSON.parse(localStorage.getItem("user")) || {};
+    return `${u.firstName?.[0] || ""}${u.lastName?.[0] || ""}`.toUpperCase() || "U";
+  } catch {
+    return "U";
+  }
+}
+
 function UserAvatar() {
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1a2540] text-[11px] font-bold text-slate-300 ring-1 ring-white/[0.08]">
-      SC
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-gold-300 to-gold-600 text-[11px] font-bold text-[#17171a] ring-1 ring-gold-400/30 shadow-[0_0_14px_rgba(212,175,55,0.2)]">
+      {getUserInitials()}
     </div>
   );
 }
@@ -1423,8 +1441,8 @@ const Message = memo(function Message({ msg }) {
 
   if (msg.role === "user") {
     return (
-      <div className="flex items-end justify-end gap-3">
-        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-indigo-500/15 px-4 py-3 text-sm leading-relaxed text-slate-100 ring-1 ring-indigo-500/20 sm:max-w-[70%]">
+      <div className="flex items-start justify-end gap-3">
+        <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-gold-400/15 px-4 py-3 text-sm leading-relaxed text-slate-100 ring-1 ring-gold-400/20 shadow-[0_0_20px_rgba(212,175,55,0.06)] sm:max-w-[70%]">
           {msg.text}
         </div>
         <UserAvatar />
@@ -1440,7 +1458,7 @@ const Message = memo(function Message({ msg }) {
           <span className="text-[13px] font-semibold text-slate-100">Cortex AI</span>
           <span className="text-[11px] text-slate-500">{msg.time}</span>
         </div>
-        <div className="rounded-2xl rounded-tl-md bg-[#1a2540] px-4 py-3.5 text-sm leading-relaxed text-slate-300 ring-1 ring-white/[0.06]">
+        <div className="rounded-2xl rounded-tl-md bg-[#1a1a1e] px-4 py-3.5 text-sm leading-relaxed text-slate-300 ring-1 ring-white/[0.06]">
           {renderMessageText(msg.text)}
         </div>
         {msg.sources?.length > 0 && (
@@ -1472,7 +1490,7 @@ function TypingIndicator() {
   return (
     <div className="flex items-end gap-3" role="status" aria-label="Cortex AI is typing">
       <BotAvatar />
-      <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-md bg-[#1a2540] px-4 py-3.5 ring-1 ring-white/[0.06]">
+      <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-md bg-[#1a1a1e] px-4 py-3.5 ring-1 ring-white/[0.06]">
         {[0, 1, 2].map((i) => (
           <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 motion-reduce:animate-none"
             style={{ animationDelay: `${i * 150}ms` }} />
@@ -1486,7 +1504,7 @@ function TypingIndicator() {
 function WelcomeState({ onPick }) {
   return (
     <div className="flex flex-col items-center px-2 pt-6 pb-4 text-center sm:pt-10">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1a2540] ring-1 ring-white/[0.08]">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#26262b] to-[#96791e]/40 ring-1 ring-gold-400/25 shadow-[0_0_20px_rgba(212,175,55,0.14)]">
         <img src="/logo.svg" alt="Cortex AI" className="h-7 w-7" />
       </div>
       <h2 className="mt-4 text-lg font-semibold text-slate-100">Ask Cortex AI</h2>
@@ -1494,9 +1512,9 @@ function WelcomeState({ onPick }) {
       <div className="mt-6 grid w-full max-w-lg gap-2 sm:grid-cols-2">
         {SUGGESTIONS.map((s) => (
           <button key={s} onClick={() => onPick(s)}
-            className="group flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-white/[0.06] bg-[#131b2e] px-3.5 py-2.5 text-left text-[13px] text-slate-300 transition-colors duration-150 hover:border-indigo-500/30 hover:bg-[#182032] hover:text-slate-100">
+            className="group flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-white/[0.06] bg-[#1a1a1e] px-3.5 py-2.5 text-left text-[13px] text-slate-300 transition-colors duration-150 hover:border-gold-400/30 hover:bg-[#202024] hover:text-slate-100">
             <span className="truncate">{s}</span>
-            <ArrowUpRightIcon className="h-3.5 w-3.5 shrink-0 text-slate-600 transition-colors duration-150 group-hover:text-indigo-400" />
+            <ArrowUpRightIcon className="h-3.5 w-3.5 shrink-0 text-slate-600 transition-colors duration-150 group-hover:text-gold-400" />
           </button>
         ))}
       </div>
@@ -1611,15 +1629,12 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId
 
       <div className="border-t border-white/[0.06] px-4 py-4 sm:px-6">
         <div className="mx-auto max-w-3xl">
-          <div className="flex items-center gap-1.5 rounded-xl bg-[#1a2540] px-2.5 py-2 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:bg-[#1d2740] focus-within:ring-indigo-500/30">
-            <button aria-label="Attach file" className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-300">
-              <PaperclipIcon className="h-4 w-4" />
-            </button>
+          <div className="flex items-center gap-1.5 rounded-xl bg-[#1a1a1e] px-2.5 py-2 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:bg-[#202024] focus-within:ring-gold-400/40">
             <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={handleKeyDown}
               placeholder="Ask Cortex AI anything..." aria-label="Message Cortex AI"
               className="flex-1 bg-transparent px-1 text-sm text-slate-200 placeholder-slate-500 outline-none" />
             <button onClick={handleSend} disabled={!chatInput.trim() || isTyping} aria-label="Send message"
-              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-indigo-500 text-white transition-colors duration-150 hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-40">
+              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-gold-400 text-[#17171a] transition-colors duration-150 hover:bg-gold-300 disabled:cursor-not-allowed disabled:opacity-40">
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13" />
                 <polygon points="22 2 15 22 11 13 2 9 22 2" />
@@ -1649,14 +1664,6 @@ function RefreshIcon({ className }) {
       <polyline points="23 4 23 10 17 10" />
       <polyline points="1 20 1 14 7 14" />
       <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-    </svg>
-  );
-}
-
-function PaperclipIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m21.44 11.05-9.19 9.19a6 6 0 01-8.49-8.49l8.57-8.57A4 4 0 1118.84 5l-8.59 8.57a2 2 0 01-2.83-2.83l8.49-8.48" />
     </svg>
   );
 }
