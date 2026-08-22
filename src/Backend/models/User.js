@@ -34,6 +34,14 @@ const userSchema = new mongoose.Schema(
           "Password must be 15+ chars with uppercase, lowercase, number, and symbol",
       },
     },
+    ai: {
+      provider: { type: String, default: "" },
+      apiKeyEnc: { type: String, default: "" }, // encrypted at rest
+      apiKeyHint: { type: String, default: "" }, // masked tail, e.g. ••••x4F2
+      baseUrl: { type: String, default: "" }, // for local/custom endpoints
+      model: { type: String, default: "" },
+      verifiedAt: { type: Date, default: null },
+    },
   },
   { timestamps: true }
 );

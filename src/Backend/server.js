@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.js";
 import folderRoutes from "./routes/folder.js";
 import filesRoutes from "./routes/files.js";
 import chatRoutes from "./routes/chat.js";
+import aiRoutes from "./routes/ai.js";
 
 const app = express();
 
@@ -31,6 +32,8 @@ app.use("/api/folders", folderRoutes);
 app.use("/api/files", filesRoutes);
 // Chat routes
 app.use("/api/chat", chatRoutes);
+// AI provider config routes
+app.use("/api/ai", aiRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

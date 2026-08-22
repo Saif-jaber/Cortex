@@ -101,7 +101,7 @@ export default function FilePopup({ folders, initialFolder, onClose, onAddFile }
               </svg>
             </div>
             {folders.length === 0 && (
-              <p className="mt-1.5 text-xs text-slate-500">No folders yet — create one first.</p>
+              <p className="mt-1.5 text-xs text-slate-500">No folders yet, create one first.</p>
             )}
           </div>
         </div>

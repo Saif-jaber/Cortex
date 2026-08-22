@@ -71,3 +71,34 @@ export async function login(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+
+export async function updateProfile(req, res) {
+  try {
+    // Email is permanent: only names are editable here.
+    const firstName = String(req.body?.firstName || "").trim();
+    const lastName = String(req.body?.lastName || "").trim();
+
+    if (!firstName || !lastName) {
+      return res.status(400).json({ error: "First name and last name are required" });
+    }
+
+    req.user.firstName = firstName;
+    req.user.lastName = lastName;
+    await req.user.save();
+
+    // Re-issue the token so its name/email claims match the updated profile.
+    const token = generateAccessToken(req.user);
+
+    res.json({
+      token,
+      user: {
+        id: req.user._id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        email: req.user.email,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}

@@ -28,6 +28,12 @@ const fileChunkSchema = new mongoose.Schema(
       type: [Number],
       required: true,
     },
+    // Which embedding produced this vector ("openai:text-embedding-3-small",
+    // "ollama:nomic-embed-text", ...) or "keyword" when stored unembedded.
+    embeddingModel: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

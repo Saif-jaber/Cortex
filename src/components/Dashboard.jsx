@@ -6,11 +6,11 @@ import { listFolders } from "../services/folderService.js"
 import { deleteFolder } from "../services/folderService.js"
 import { listFiles, deleteFile } from "../services/fileService.js"
 import { askAI, listChats, getChat, deleteChat } from "../services/chatService.js"
+import { getAiProviders, getAiConfig, saveAiConfig, deleteAiConfig } from "../services/aiService.js"
 
 const NAV_ITEMS = [
   { id: "knowledge", label: "Knowledge Base", mobile: "Knowledge", icon: DatabaseIcon },
   { id: "chat", label: "AI Chat", mobile: "Chat", icon: ChatIcon },
-  { id: "analytics", label: "Analytics", mobile: "Analytics", icon: AnalyticsIcon },
   { id: "profile", label: "Profile", mobile: "Profile", icon: ProfileIcon },
 ];
 
@@ -76,6 +76,7 @@ export default function Dashboard({ onExitHome }) {
   const [chatSessions, setChatSessions] = useState([]);
   const [showPopup, setShowPopup] = useState(null);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [aiConfig, setAiConfig] = useState(null);
   const [folderCards, setFolderCards] = useState([]);
   const [files, setFiles] = useState([]);
   const [confirmDialog, setConfirmDialog] = useState(null);
@@ -94,6 +95,9 @@ export default function Dashboard({ onExitHome }) {
       .catch(() => {});
     listFiles()
       .then((files) => { if (!cancelled) setFiles(files.map((f) => toFileCard(f))); })
+      .catch(() => {});
+    getAiConfig()
+      .then((config) => { if (!cancelled) setAiConfig(config); })
       .catch(() => {});
     return () => { cancelled = true; };
    }, []);
@@ -254,7 +258,7 @@ export default function Dashboard({ onExitHome }) {
       {/* Second Sidebar */}
       <aside className="hidden w-[280px] shrink-0 flex-col border-r border-white/[0.06] bg-[#121214] lg:flex">
         {activeNav === "chat" ? (
-          <ChatSidebarPanel closeButton={null} onOpenApiKey={() => setShowApiKey(true)}
+          <ChatSidebarPanel closeButton={null} onOpenApiKey={() => setShowApiKey(true)} aiConnected={!!aiConfig?.configured}
             chats={chatSessions} activeChatId={activeChatId} onSelectChat={handleSelectChat}
             onNewChat={handleNewChat} onDeleteChat={handleDeleteChat} />
         ) : (
@@ -331,7 +335,8 @@ export default function Dashboard({ onExitHome }) {
 
         {activeNav === "chat" ? (
           <ChatPage messages={messages} setMessages={setMessages} chatInput={chatInput} setChatInput={setChatInput}
-            activeChatId={activeChatId} setActiveChatId={setActiveChatId} setChatSessions={setChatSessions} />
+            activeChatId={activeChatId} setActiveChatId={setActiveChatId} setChatSessions={setChatSessions}
+            aiConnected={!!aiConfig?.configured} onOpenSettings={() => setShowApiKey(true)} />
         ) : activeNav === "profile" ? (
           <ProfilePage
             foldersCount={folderCards.length}
@@ -437,7 +442,12 @@ export default function Dashboard({ onExitHome }) {
         )}
         {showPopup === "folder" && <FolderPopup folders={folderCards} onClose={() => setShowPopup(null)} onCreate={(folder) => setFolderCards((prev) => [...prev, folder])} />}
         {showPopup === "file" && <FilePopup folders={folderCards} initialFolder={selectedFolder} onClose={() => setShowPopup(null)} onAddFile={(newFiles) => setFiles((prev) => [...newFiles.map((f) => toFileCard(f)), ...prev])} />}
-        {showApiKey && <ApiKeyModal onClose={() => setShowApiKey(false)} />}
+        {showApiKey && (
+          <AiSettingsModal
+            onClose={() => setShowApiKey(false)}
+            onSaved={(config) => setAiConfig(config)}
+          />
+        )}
         {confirmDialog && (
           <ConfirmDialog
             title={confirmDialog.title}
@@ -469,6 +479,7 @@ export default function Dashboard({ onExitHome }) {
                 setShowApiKey(true);
                 setSidebarOpen(false);
               }}
+              aiConnected={!!aiConfig?.configured}
               chats={chatSessions} activeChatId={activeChatId} onSelectChat={handleSelectChat}
               onNewChat={handleNewChat} onDeleteChat={handleDeleteChat}
             />
@@ -566,7 +577,7 @@ function SidebarPanel({ closeButton, activeTab, setActiveTab, searchQuery, setSe
   );
 }
 
-function ChatSidebarPanel({ closeButton, onOpenApiKey, chats, activeChatId, onSelectChat, onNewChat, onDeleteChat }) {
+function ChatSidebarPanel({ closeButton, onOpenApiKey, aiConnected, chats, activeChatId, onSelectChat, onNewChat, onDeleteChat }) {
   const [query, setQuery] = useState("");
 
   const filtered = chats.filter(
@@ -620,10 +631,14 @@ function ChatSidebarPanel({ closeButton, onOpenApiKey, chats, activeChatId, onSe
         <button onClick={onOpenApiKey}
           className="flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-[13px] font-medium text-slate-300 transition-all duration-150 hover:border-gold-400/30 hover:bg-white/[0.06] hover:text-slate-100 sm:px-3.5">
           <span className="flex items-center gap-2.5">
-            <KeyIcon className="h-4 w-4 text-slate-500" />
-            API Key
+            <span className="relative flex">
+              <KeyIcon className="h-4 w-4 text-slate-500" />
+              <span aria-hidden="true"
+                className={`absolute -right-[3px] -top-[3px] h-[7px] w-[7px] rounded-full ring-2 ring-[#121214] ${aiConnected ? "bg-emerald-400" : "bg-slate-600"}`} />
+            </span>
+            AI Model
           </span>
-          <PlusIcon className="h-4 w-4 text-slate-500" />
+          <ChevronRightIcon className="h-3.5 w-3.5 text-slate-500" />
         </button>
       </div>
     </>
@@ -812,16 +827,6 @@ function ChatIcon({ className, strokeWidth }) {
   );
 }
 
-function AnalyticsIcon({ className, strokeWidth }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10" />
-      <line x1="12" y1="20" x2="12" y2="4" />
-      <line x1="6" y1="20" x2="6" y2="14" />
-    </svg>
-  );
-}
-
 function PlusIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -982,73 +987,335 @@ function FileTypeSVG({ type, className }) {
   return icons[type] || icons.pdf;
 }
 
-function ApiKeyModal({ onClose }) {
-  const [currentKey] = useState("sk-proj-•••••••••••••••••x4F2");
-  const [newKey, setNewKey] = useState("");
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
+const PROVIDER_MONOGRAM = {
+  openai: { text: "AI", cls: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20" },
+  anthropic: { text: "Cl", cls: "bg-orange-500/15 text-orange-300 ring-orange-400/20" },
+  google: { text: "G", cls: "bg-blue-500/15 text-blue-300 ring-blue-400/20" },
+  groq: { text: "Gr", cls: "bg-red-500/15 text-red-300 ring-red-400/20" },
+  openrouter: { text: "OR", cls: "bg-violet-500/15 text-violet-300 ring-violet-400/20" },
+  ollama: { text: "Ol", cls: "bg-slate-500/15 text-slate-300 ring-slate-400/20" },
+  custom: { text: "</>", cls: "bg-gold-400/15 text-gold-300 ring-gold-400/20" },
+};
 
-  const handleSubmit = () => {
-    onClose();
-  };
+function AiSettingsModal({ onClose, onSaved }) {
+  const [providers, setProviders] = useState([]);
+  const [current, setCurrent] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [apiKey, setApiKey] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
+  const [model, setModel] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedOk, setSavedOk] = useState(false);
+  const [error, setError] = useState("");
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([getAiProviders(), getAiConfig()])
+      .then(([list, config]) => {
+        if (cancelled) return;
+        setProviders(list);
+        if (config?.configured) {
+          setCurrent(config);
+          applyProvider(list.find((p) => p.id === config.provider) || null, config);
+        }
+      })
+      .catch((err) => { if (!cancelled) setError(err.message); });
+    return () => { cancelled = true; };
+  }, []);
+
+  function applyProvider(def, existing) {
+    if (!def) return;
+    setSelected(def.id);
+    setError("");
+    setSavedOk(false);
+    setApiKey("");
+    setBaseUrl(existing && existing.provider === def.id ? existing.baseUrl || def.defaultBaseUrl : def.defaultBaseUrl || "");
+    setModel(existing && existing.provider === def.id ? existing.model || def.defaultModel : def.defaultModel || "");
+    setShowKey(false);
+  }
+
+  const def = providers.find((p) => p.id === selected);
+  const needsKey = !!def?.requiresKey;
+  const needsUrl = selected === "custom";
+  const needsModel = selected === "ollama" || selected === "custom";
+  const isEditingCurrent = !!current && current.provider === selected;
+
+  const canSubmit =
+    !!def &&
+    !saving &&
+    (!needsKey || apiKey.trim().length > 0) &&
+    (!needsUrl || baseUrl.trim().length > 0) &&
+    (!needsModel || model.trim().length > 0);
+
+  async function handleSave() {
+    if (!canSubmit) return;
+    setSaving(true);
+    setError("");
+    try {
+      const config = await saveAiConfig({
+        provider: selected,
+        apiKey: apiKey.trim(),
+        baseUrl: baseUrl.trim(),
+        model: model.trim(),
+      });
+      setSavedOk(true);
+      setTimeout(() => {
+        onSaved?.(config);
+        onClose();
+      }, 700);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true);
+    setError("");
+    try {
+      const config = await deleteAiConfig();
+      setCurrent(null);
+      setApiKey("");
+      setBaseUrl("");
+      setModel("");
+      setSavedOk(false);
+      onSaved?.(config);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  const cloudProviders = providers.filter((p) => p.kind === "cloud");
+  const localProviders = providers.filter((p) => p.kind !== "cloud");
 
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-1/2 top-1/2 z-40 flex max-h-[88vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#202024] shadow-2xl shadow-black/40">
+      <div className="fixed left-1/2 top-1/2 z-40 flex max-h-[90vh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#202024] shadow-2xl shadow-black/40">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-4 sm:px-5">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold-400/15 ring-1 ring-gold-400/20">
               <KeyIcon className="h-4 w-4 text-gold-400" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-slate-200">API Key</h3>
-              <p className="text-[11px] text-slate-500">Manage your AI credentials</p>
+              <h3 className="text-sm font-semibold text-slate-200">AI Model</h3>
+              <p className="text-[11px] text-slate-500">Connect an API key or a local model</p>
             </div>
           </div>
           <button onClick={onClose} aria-label="Close" className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <XIcon className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="space-y-4 overflow-y-auto px-4 py-5 sm:px-5">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">Current Key</label>
-            <div className="relative">
-              <input type={showCurrent ? "text" : "password"} value={currentKey} readOnly aria-label="Current API key"
-                className="w-full rounded-lg bg-white/[0.03] px-3 py-2 pr-10 text-sm text-slate-300 outline-none ring-1 ring-white/[0.06]" />
-              <button type="button" onClick={() => setShowCurrent(!showCurrent)} aria-label={showCurrent ? "Hide current key" : "Show current key"}
-                className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-300">
-                <EyeIcon className="h-4 w-4" />
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4 sm:px-5">
+          {current?.configured && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] px-3.5 py-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:hidden" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-medium text-slate-100">{current.label} connected</p>
+                  <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                    {current.model}
+                    {current.apiKeyHint ? ` · ${current.apiKeyHint}` : ""}
+                  </p>
+                </div>
+              </div>
+              <button onClick={handleDisconnect} disabled={disconnecting}
+                className="shrink-0 rounded-lg bg-white/[0.05] px-2.5 py-1.5 text-[11px] font-medium text-red-300 transition-colors duration-150 hover:bg-red-500/10 disabled:opacity-50">
+                {disconnecting ? "Removing..." : "Disconnect"}
               </button>
+            </div>
+          )}
+
+          <div>
+            <p className="mb-2 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Cloud providers</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {cloudProviders.map((p) => (
+                <ProviderCard key={p.id} provider={p} active={selected === p.id} onSelect={() => applyProvider(p)} />
+              ))}
             </div>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">New Key</label>
-            <div className="relative">
-              <input type={showNew ? "text" : "password"} value={newKey} onChange={(e) => setNewKey(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="Enter a new key..." autoFocus
-                className="w-full rounded-lg bg-white/[0.04] px-3 py-2 pr-10 text-sm text-slate-200 placeholder-slate-500 outline-none ring-1 ring-white/[0.06] transition-all duration-200 focus:ring-gold-400/40" />
-              <button type="button" onClick={() => setShowNew(!showNew)} aria-label={showNew ? "Hide new key" : "Show new key"}
-                className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-300">
-                <EyeIcon className="h-4 w-4" />
-              </button>
+            <p className="mb-2 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Local &amp; custom</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {localProviders.map((p) => (
+                <ProviderCard key={p.id} provider={p} active={selected === p.id} onSelect={() => applyProvider(p)} />
+              ))}
             </div>
           </div>
 
-          <p className="text-xs leading-relaxed text-slate-500">Your key is stored securely on this device and used only to power AI features.</p>
+          {def && (
+            <div className="space-y-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-200">{def.label}</p>
+                {def.keyUrl && (
+                  <a href={def.keyUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[11px] font-medium text-gold-400 transition-colors hover:text-gold-300">
+                    Get an API key <ArrowUpRightIcon className="h-3 w-3" />
+                  </a>
+                )}
+                {selected === "ollama" && (
+                  <span className="text-[11px] text-slate-500">No key needed, just run Ollama</span>
+                )}
+              </div>
+
+              {needsUrl && (
+                <FormField label="Server URL">
+                  <input type="text" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)}
+                    placeholder="http://localhost:1234/v1" autoFocus
+                    className={inputClsModal} />
+                </FormField>
+              )}
+
+              {selected === "ollama" && (
+                <FormField label="Server URL">
+                  <input type="text" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)}
+                    placeholder="http://localhost:11434/v1"
+                    className={inputClsModal} />
+                </FormField>
+              )}
+
+              {needsKey && (
+                <FormField label="API Key">
+                  <div className="relative">
+                    <input type={showKey ? "text" : "password"} value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)} autoFocus placeholder="Paste your key..."
+                      className={`${inputClsModal} pr-10`} />
+                    <button type="button" onClick={() => setShowKey(!showKey)}
+                      aria-label={showKey ? "Hide key" : "Show key"}
+                      className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-300">
+                      <EyeIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                </FormField>
+              )}
+
+              {!needsKey && !needsUrl && selected !== "ollama" && (
+                <FormField label="API Key (optional)">
+                  <div className="relative">
+                    <input type={showKey ? "text" : "password"} value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)} placeholder="Leave empty if your server needs no auth"
+                      className={`${inputClsModal} pr-10`} />
+                    <button type="button" onClick={() => setShowKey(!showKey)}
+                      aria-label={showKey ? "Hide key" : "Show key"}
+                      className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition-colors duration-150 hover:bg-white/[0.06] hover:text-slate-300">
+                      <EyeIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                </FormField>
+              )}
+
+              <FormField label={needsModel ? "Model name" : "Model (optional)"}>
+                <input type="text" value={model} onChange={(e) => setModel(e.target.value)}
+                  placeholder={def.defaultModel || `${def.suggestedModels[0] || "e.g. llama3.2"}`}
+                  list={`models-${def.id}`} className={inputClsModal} />
+                <datalist id={`models-${def.id}`}>
+                  {(def.suggestedModels || []).map((m) => <option key={m} value={m} />)}
+                </datalist>
+              </FormField>
+
+              <p className="text-[11px] leading-relaxed text-slate-500">
+                {selected === "ollama"
+                  ? "Make sure Ollama is running locally. The model must be pulled first (e.g. `ollama pull llama3.2`)."
+                  : needsModel
+                    ? "The exact model name your endpoint serves (e.g. the model id shown in LM Studio)."
+                    : "Your key is encrypted on the server and verified against the provider before saving. Invalid keys are rejected."}
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/[0.08] px-3.5 py-3">
+              <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p className="text-xs leading-relaxed text-red-300">{error}</p>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col-reverse gap-2 border-t border-white/[0.06] px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:flex-row sm:justify-end sm:px-5 sm:pb-4">
-          <button onClick={onClose} className="w-full rounded-lg px-4 py-2.5 text-xs font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200 sm:w-auto sm:py-2">Cancel</button>
-          <button onClick={handleSubmit} disabled={!newKey.trim()} className="w-full rounded-lg bg-gold-400 px-4 py-2.5 text-xs font-medium text-[#17171a] transition-all duration-150 hover:bg-gold-300 disabled:opacity-40 disabled:cursor-not-allowed sm:w-auto sm:py-2">
-            Save Key
+          <button onClick={onClose} disabled={saving}
+            className="w-full rounded-lg px-4 py-2.5 text-xs font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200 disabled:opacity-50 sm:w-auto sm:py-2">Cancel</button>
+          <button onClick={handleSave} disabled={!canSubmit}
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold-400 px-4 py-2.5 text-xs font-medium text-[#17171a] transition-all duration-150 hover:bg-gold-300 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:py-2">
+            {saving ? (
+              <>
+                <SpinnerIcon className="h-3.5 w-3.5" /> Verifying...
+              </>
+            ) : savedOk ? (
+              <>
+                <CheckIcon className="h-3.5 w-3.5" /> Connected
+              </>
+            ) : isEditingCurrent ? (
+              "Update Connection"
+            ) : (
+              "Verify & Save"
+            )}
           </button>
         </div>
       </div>
     </>
+  );
+}
+
+function ProviderCard({ provider, active, onSelect }) {
+  const mono = PROVIDER_MONOGRAM[provider.id] || PROVIDER_MONOGRAM.custom;
+  return (
+    <button type="button" onClick={onSelect}
+      className={`group flex items-start gap-2.5 rounded-xl border p-3 text-left transition-all duration-150 ${active ? "border-gold-400/40 bg-[#26262b] ring-1 ring-gold-400/25" : "border-white/[0.06] bg-white/[0.03] hover:border-white/[0.14] hover:bg-white/[0.05]"}`}>
+      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold ring-1 ${mono.cls}`}>
+        {mono.text}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <span className="truncate text-[13px] font-medium text-slate-200 group-hover:text-slate-100">{provider.label}</span>
+          {provider.kind === "local" && (
+            <span className="shrink-0 rounded-md bg-white/[0.07] px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-slate-400 uppercase">Local</span>
+          )}
+        </div>
+        <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate-500">{provider.description}</p>
+      </div>
+      {active && <CheckIcon className="mt-1 h-3.5 w-3.5 shrink-0 text-gold-400" />}
+    </button>
+  );
+}
+
+function FormField({ label, children }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[11px] font-medium text-slate-400">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+const inputClsModal =
+  "w-full rounded-lg bg-white/[0.04] px-3 py-2 text-sm text-slate-200 placeholder-slate-600 outline-none ring-1 ring-white/[0.06] transition-all duration-200 focus:ring-gold-400/40";
+
+function SpinnerIcon({ className }) {
+  return (
+    <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+      <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
   );
 }
 
@@ -1185,7 +1452,7 @@ function renderTextBlock(lines, startIdx) {
         <div key={startIdx + i} className="my-1.5 space-y-1 pl-0.5">
           {listItems.map((item, li) => (
             <div key={li} className="flex items-start gap-2.5">
-              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-gold-400" />
+              <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-gold-400" />
               <span className="text-sm leading-relaxed">{renderInline(item)}</span>
             </div>
           ))}
@@ -1206,7 +1473,7 @@ function renderTextBlock(lines, startIdx) {
         <div key={startIdx + i} className="my-1.5 space-y-1 pl-0.5">
           {listItems.map((item, li) => (
             <div key={li} className="flex items-start gap-2.5">
-              <span className="mt-0.5 w-5 shrink-0 text-right font-mono text-[13px] font-medium text-gold-400/70">{item.num}.</span>
+              <span className="mt-[3px] w-6 shrink-0 text-right font-mono text-sm font-semibold tracking-tight text-white [font-variant-numeric:tabular-nums]">{item.num}.</span>
               <span className="text-sm leading-relaxed">{renderInline(item.text)}</span>
             </div>
           ))}
@@ -1522,7 +1789,7 @@ function WelcomeState({ onPick }) {
   );
 }
 
-function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId, setActiveChatId, setChatSessions }) {
+function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId, setActiveChatId, setChatSessions, aiConnected, onOpenSettings }) {
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef(null);
 
@@ -1534,7 +1801,7 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId
   }, [messages, isTyping]);
 
   const handleSend = async () => {
-    if (!chatInput.trim() || isTyping) return;
+    if (!chatInput.trim() || isTyping || !aiConnected) return;
     const text = chatInput.trim();
     setMessages((prev) => [...prev, { role: "user", text, time: formatTime(new Date()) }]);
     setChatInput("");
@@ -1619,7 +1886,11 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain [scroll-behavior:auto]">
         <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6">
           {isFresh ? (
-            <WelcomeState onPick={(s) => setChatInput(s)} />
+            aiConnected ? (
+              <WelcomeState onPick={(s) => setChatInput(s)} />
+            ) : (
+              <ConnectPrompt onOpenSettings={onOpenSettings} />
+            )
           ) : (
             messages.map((msg, i) => <Message key={i} msg={msg} />)
           )}
@@ -1629,20 +1900,68 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId
 
       <div className="border-t border-white/[0.06] px-4 py-4 sm:px-6">
         <div className="mx-auto max-w-3xl">
-          <div className="flex items-center gap-1.5 rounded-xl bg-[#1a1a1e] px-2.5 py-2 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:bg-[#202024] focus-within:ring-gold-400/40">
-            <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={handleKeyDown}
-              placeholder="Ask Cortex AI anything..." aria-label="Message Cortex AI"
-              className="flex-1 bg-transparent px-1 text-sm text-slate-200 placeholder-slate-500 outline-none" />
-            <button onClick={handleSend} disabled={!chatInput.trim() || isTyping} aria-label="Send message"
-              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-gold-400 text-[#17171a] transition-colors duration-150 hover:bg-gold-300 disabled:cursor-not-allowed disabled:opacity-40">
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </button>
-          </div>
+          {aiConnected ? (
+            <div className="flex items-center gap-1.5 rounded-xl bg-[#1a1a1e] px-2.5 py-2 ring-1 ring-white/[0.06] transition-all duration-200 focus-within:bg-[#202024] focus-within:ring-gold-400/40">
+              <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={handleKeyDown}
+                placeholder="Ask Cortex AI anything..." aria-label="Message Cortex AI"
+                className="flex-1 bg-transparent px-1 text-sm text-slate-200 placeholder-slate-500 outline-none" />
+              <button onClick={handleSend} disabled={!chatInput.trim() || isTyping} aria-label="Send message"
+                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-gold-400 text-[#17171a] transition-colors duration-150 hover:bg-gold-300 disabled:cursor-not-allowed disabled:opacity-40">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <NoAiBanner onOpenSettings={onOpenSettings} />
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ConnectPrompt({ onOpenSettings }) {
+  return (
+    <div className="flex flex-col items-center px-2 pt-8 pb-4 text-center sm:pt-14">
+      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#26262b] to-[#96791e]/40 ring-1 ring-gold-400/25">
+        <img src="/logo.svg" alt="" className="h-8 w-8 opacity-80" />
+        <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#202024] ring-1 ring-white/[0.1]">
+          <KeyIcon className="h-2.5 w-2.5 text-gold-400" />
+        </span>
+      </div>
+      <h2 className="mt-5 text-lg font-semibold text-slate-100">Connect an AI model</h2>
+      <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-500">
+        Cortex uses your own AI credentials. Add an API key from a provider like{" "}
+        <span className="text-slate-400">OpenAI, Anthropic, Gemini, Groq</span> or{" "}
+        <span className="text-slate-400">OpenRouter</span>, or point it at a local model like Ollama.
+      </p>
+      <button onClick={onOpenSettings}
+        className="mt-6 flex items-center gap-2 rounded-lg bg-gold-400 px-4 py-2.5 text-xs font-semibold text-[#17171a] shadow-lg shadow-gold-400/20 transition-colors duration-150 hover:bg-gold-300">
+        <KeyIcon className="h-3.5 w-3.5" /> Add API Key / Model
+      </button>
+      <p className="mt-3 text-[11px] text-slate-600">Keys are encrypted and verified before saving.</p>
+    </div>
+  );
+}
+
+function NoAiBanner({ onOpenSettings }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-gold-400/20 bg-gold-400/[0.05] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold-400/15 ring-1 ring-gold-400/20">
+          <KeyIcon className="h-4 w-4 text-gold-400" />
+        </div>
+        <div>
+          <p className="text-[13px] font-medium text-slate-200">AI isn't connected yet</p>
+          <p className="text-[11px] text-slate-500">Add an API key or local model URL to start chatting.</p>
+        </div>
+      </div>
+      <button onClick={onOpenSettings}
+        className="shrink-0 self-start rounded-lg bg-gold-400 px-3.5 py-2 text-xs font-semibold text-[#17171a] transition-colors duration-150 hover:bg-gold-300 sm:self-auto">
+        Connect AI
+      </button>
     </div>
   );
 }
