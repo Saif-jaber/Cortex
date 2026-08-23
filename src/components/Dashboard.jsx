@@ -289,6 +289,11 @@ export default function Dashboard({ onExitHome }) {
                 <ProfileIcon className="h-4 w-4 shrink-0 text-slate-500" />
                 <span>Profile</span>
               </div>
+            ) : activeNav === "chat" ? (
+              <div className="flex items-center gap-2 rounded-lg px-2 sm:px-3 py-1.5 text-sm font-medium text-slate-200">
+                <ChatIcon className="h-4 w-4 shrink-0 text-slate-500" />
+                <span>AI Chat</span>
+              </div>
             ) : (
               <button onClick={() => setBreadcrumbOpen(!breadcrumbOpen)}
                 className="flex items-center gap-2 rounded-lg px-2 sm:px-3 py-1.5 text-sm font-medium text-slate-200 transition-all duration-150 hover:bg-white/[0.06]">
@@ -297,7 +302,7 @@ export default function Dashboard({ onExitHome }) {
                 <ChevronDownIcon className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform duration-200 ${breadcrumbOpen ? "rotate-180" : ""}`} />
               </button>
             )}
-            {breadcrumbOpen && (
+            {breadcrumbOpen && activeNav !== "chat" && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setBreadcrumbOpen(false)} />
                 <div className="absolute left-0 top-full z-20 mt-1.5 w-60 overflow-hidden rounded-xl border border-white/[0.08] bg-[#202024] py-1.5 shadow-2xl shadow-black/40">
@@ -320,9 +325,6 @@ export default function Dashboard({ onExitHome }) {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <button aria-label="Settings" className="hidden h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200 sm:flex">
-              <SettingsIcon className="h-4 w-4" />
-            </button>
             <div className="mx-1 hidden h-5 w-px bg-white/[0.08] sm:block" />
             <button className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 transition-all duration-150 hover:bg-white/[0.06]">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 text-[11px] font-bold text-[#17171a] shadow-lg shadow-gold-400/25">
@@ -528,9 +530,6 @@ function SidebarPanel({ closeButton, activeTab, setActiveTab, searchQuery, setSe
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <h2 className="text-sm font-semibold text-slate-200">Knowledge Base</h2>
         <div className="flex items-center gap-0.5">
-          <button aria-label="Create new" className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
-            <PlusIcon className="h-4 w-4" />
-          </button>
           <button aria-label="Toggle layout" className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200">
             <GridIcon className="h-4 w-4" />
           </button>
@@ -550,12 +549,10 @@ function SidebarPanel({ closeButton, activeTab, setActiveTab, searchQuery, setSe
       </div>
 
       <div className="flex gap-1 px-4 pb-3">
-        {["Folders", "Tags"].map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab.toLowerCase())}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${activeTab === tab.toLowerCase() ? "bg-white/[0.08] text-slate-100 shadow-sm ring-1 ring-white/[0.08]" : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-300"}`}>
-            {tab}
-          </button>
-        ))}
+        <button onClick={() => setActiveTab("folders")}
+          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${activeTab === "folders" ? "bg-white/[0.08] text-slate-100 shadow-sm ring-1 ring-white/[0.08]" : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-300"}`}>
+          Folders
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-4">
@@ -863,15 +860,6 @@ function KeyIcon({ className }) {
       <path d="M10.7 12.3L21 2" />
       <path d="M17 6l3 3" />
       <path d="M13.5 9.5l2.5 2.5" />
-    </svg>
-  );
-}
-
-function SettingsIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
     </svg>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Modal from "./Modal";
 import SuccessOverlay from "./SuccessOverlay";
-import { ArrowRightIcon, CheckIcon, GitHubIcon, GoogleIcon } from "./icons";
+import { ArrowRightIcon, CheckIcon } from "./icons";
 import { signupUser } from "../services/authService.js"
 import { useToast } from "../hooks/useToast.jsx"
 
@@ -45,30 +45,7 @@ export default function SignUpModal({ onClose, onSwitchToSignIn }) {
   };
 
   return (
-    <Modal onClose={onClose} title="Create your account" subtitle="Start your free 14-day trial. No credit card required.">
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5">
-        <button
-          type="button"
-          className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.03] py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-white/[0.06] sm:py-2.5"
-        >
-          <GitHubIcon className="h-4 w-4" />
-          GitHub
-        </button>
-        <button
-          type="button"
-          className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.03] py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-white/[0.06] sm:py-2.5"
-        >
-          <GoogleIcon className="h-4 w-4" />
-          Google
-        </button>
-      </div>
-
-      <div className="my-3.5 flex items-center gap-3 sm:my-5">
-        <span className="h-px flex-1 bg-white/[0.08]" />
-        <span className="text-xs uppercase tracking-wider text-slate-500">or</span>
-        <span className="h-px flex-1 bg-white/[0.08]" />
-      </div>
-
+    <Modal onClose={onClose} title="Create your account" subtitle="Create your free account. No credit card required.">
       <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
         <div className="grid grid-cols-2 gap-2">
           <div>
