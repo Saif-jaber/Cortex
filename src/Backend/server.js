@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { sanitize } from "express-mongo-sanitize";
+import mongoose from "mongoose";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import folderRoutes from "./routes/folder.js";
@@ -32,6 +33,11 @@ app.use((req, res, next) => {
 // mongoose buffers queries until the connection succeeds.
 connectDB().catch((err) => {
   console.error("Initial MongoDB connection failed:", err.message);
+});
+
+// Health check for verifying the function boots on Vercel
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, db: mongoose.connection.readyState });
 });
 
 // Auth routes
