@@ -1365,6 +1365,22 @@ function renderInline(text) {
   });
 }
 
+function isTableSeparator(line) {
+  const t = line.trim();
+  if (!t.includes("|") || !t.includes("-")) return false;
+  return t.split("|").every((c) => c.trim() === "" || /^\s*:?-+:?\s*$/.test(c));
+}
+
+function isTableStart(lines, i) {
+  if (i + 1 >= lines.length) return false;
+  const line = lines[i].trim();
+  return line.includes("|") && isTableSeparator(lines[i + 1]);
+}
+
+function splitTableRow(line) {
+  return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
+}
+
 function renderTextBlock(lines, startIdx) {
   const elements = [];
   let i = 0;
@@ -1471,9 +1487,49 @@ function renderTextBlock(lines, startIdx) {
       continue;
     }
 
+    if (isTableStart(lines, i)) {
+      const headers = splitTableRow(trimmed);
+      const aligns = splitTableRow(lines[i + 1]).map((c) => {
+        if (c.startsWith(":") && c.endsWith(":")) return "text-center";
+        if (c.endsWith(":")) return "text-right";
+        return "text-left";
+      });
+      i += 2;
+      const rows = [];
+      while (i < lines.length && lines[i].trim().includes("|") && lines[i].trim()) {
+        rows.push(splitTableRow(lines[i]));
+        i++;
+      }
+      const cellCls = (ci) => aligns[ci] || "text-left";
+      elements.push(
+        <div key={startIdx + i} className="my-2.5 overflow-x-auto rounded-lg ring-1 ring-white/[0.08]">
+          <table className="w-full min-w-max border-collapse text-[12px] sm:text-[13px]">
+            <thead>
+              <tr className="bg-white/[0.05]">
+                {headers.map((h, hi) => (
+                  <th key={hi} className={`border-b border-white/[0.08] px-3 py-2 font-semibold text-slate-200 ${cellCls(hi)}`}>{renderInline(h)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, ri) => (
+                <tr key={ri} className={ri % 2 === 1 ? "bg-white/[0.02]" : ""}>
+                  {row.map((cell, ci) => (
+                    <td key={ci} className={`border-b border-white/[0.05] px-3 py-1.5 text-slate-300 ${cellCls(ci)}`}>{renderInline(cell)}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      isFirstBlock = false;
+      continue;
+    }
+
     const paraLines = [trimmed];
     i++;
-    while (i < lines.length && lines[i].trim() && !/^(#{1,6}\s|(-{3,}|\*{3,}|_{3,})$|>\s?|[-*+]\s+|\d+\.\s+)/.test(lines[i].trim())) {
+    while (i < lines.length && lines[i].trim() && !isTableStart(lines, i) && !/^(#{1,6}\s|(-{3,}|\*{3,}|_{3,})$|>\s?|[-*+]\s+|\d+\.\s+)/.test(lines[i].trim())) {
       paraLines.push(lines[i].trim());
       i++;
     }
@@ -1697,7 +1753,7 @@ const Message = memo(function Message({ msg }) {
   if (msg.role === "user") {
     return (
       <div className="flex items-start justify-end gap-3">
-        <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-gold-400/15 px-4 py-3 text-sm leading-relaxed text-slate-100 ring-1 ring-gold-400/20 shadow-[0_0_20px_rgba(212,175,55,0.06)] sm:max-w-[70%]">
+        <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-gold-400/15 px-4 py-3 text-sm leading-relaxed text-slate-100 ring-1 ring-gold-400/20 shadow-[0_0_20px_rgba(212,175,55,0.06)] sm:max-w-[70%] [overflow-wrap:anywhere]">
           {msg.text}
         </div>
         <UserAvatar />
@@ -1713,7 +1769,7 @@ const Message = memo(function Message({ msg }) {
           <span className="text-[13px] font-semibold text-slate-100">Cortex AI</span>
           <span className="text-[11px] text-slate-500">{msg.time}</span>
         </div>
-        <div className="rounded-2xl rounded-tl-md bg-[#1a1a1e] px-4 py-3.5 text-sm leading-relaxed text-slate-300 ring-1 ring-white/[0.06]">
+        <div className="rounded-2xl rounded-tl-md bg-[#1a1a1e] px-4 py-3.5 text-sm leading-relaxed text-slate-300 ring-1 ring-white/[0.06] [overflow-wrap:anywhere]">
           {renderMessageText(msg.text)}
         </div>
         {msg.sources?.length > 0 && (
