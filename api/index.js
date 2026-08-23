@@ -2,6 +2,12 @@
 // browser) instead of an opaque FUNCTION_INVOCATION_FAILED crash page.
 let app;
 
+// pdfjs-dist (via pdf-parse) references browser-only globals at import time.
+// Text extraction never renders, so minimal stubs are sufficient in Node.
+globalThis.DOMMatrix ??= class DOMMatrix {};
+globalThis.ImageData ??= class ImageData {};
+globalThis.Path2D ??= class Path2D {};
+
 export default async function handler(req, res) {
   try {
     if (!app) {
