@@ -36,8 +36,19 @@ connectDB().catch((err) => {
 });
 
 // Health check for verifying the function boots on Vercel
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true, db: mongoose.connection.readyState });
+app.get("/api/health", async (req, res) => {
+  let dbError = null;
+  try {
+    await Promise.race([
+      connectDB(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("connection attempt exceeded 8s")), 8000)
+      ),
+    ]);
+  } catch (err) {
+    dbError = err.message;
+  }
+  res.json({ ok: true, db: mongoose.connection.readyState, dbError });
 });
 
 // Auth routes
