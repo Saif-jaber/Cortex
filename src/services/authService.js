@@ -1,4 +1,6 @@
-const API_URL = "/api/auth";
+import { BASE_URL } from "./apiBase.js";
+
+const API_URL = `${BASE_URL}/api/auth`;
 
 export async function signupUser(data) {
   const res = await fetch(`${API_URL}/signup`, {

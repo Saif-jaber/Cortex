@@ -1,4 +1,6 @@
-const API_URL = "/api/files";
+import { BASE_URL } from "./apiBase.js";
+
+const API_URL = `${BASE_URL}/api/files`;
 
 function authHeaders() {
   const headers = {};

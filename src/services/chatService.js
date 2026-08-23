@@ -1,4 +1,6 @@
-const API_URL = "/api/chat";
+import { BASE_URL } from "./apiBase.js";
+
+const API_URL = `${BASE_URL}/api/chat`;
 
 function authHeaders() {
   const headers = {};
