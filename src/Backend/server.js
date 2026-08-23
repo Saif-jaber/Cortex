@@ -10,6 +10,8 @@ import aiRoutes from "./routes/ai.js";
 
 const app = express();
 
+export default app;
+
 app.use(express.json());
 
 // express-mongo-sanitize's bundled middleware reassigns req.query, which is
@@ -35,7 +37,11 @@ app.use("/api/chat", chatRoutes);
 // AI provider config routes
 app.use("/api/ai", aiRoutes);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// On Vercel the app runs as a serverless function (api/index.js), so we only
+// listen when started directly (local dev).
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
