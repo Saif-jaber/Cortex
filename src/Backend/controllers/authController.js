@@ -1,5 +1,5 @@
 import User from "../models/User.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { generateAccessToken } from "../utils/jwt.js";
 
 const SALT_ROUNDS = 10;
