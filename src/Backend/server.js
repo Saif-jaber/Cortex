@@ -24,7 +24,12 @@ app.use((req, res, next) => {
   next();
 });
 
-connectDB();
+// On Vercel a failed connection must not become an unhandled rejection
+// (that would crash the serverless instance). Mongoose buffers queries
+// until the connection succeeds.
+connectDB().catch((err) => {
+  console.error("Initial MongoDB connection failed:", err.message);
+});
 
 // Auth routes 
 app.use("/api/auth", authRoutes);
