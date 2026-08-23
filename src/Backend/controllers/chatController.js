@@ -328,7 +328,7 @@ export async function chat(req, res) {
   } catch (err) {
     console.error("Chat error:", err);
     if (!answer) {
-      answer = "Something went wrong while generating a response. Please try again.";
+      answer = `Error: ${err.message}`;
       sendEvent({ type: "error", message: err.message });
     }
   }
