@@ -694,7 +694,7 @@ function FolderCard({ folder, fileCount, selected, onSelect, onDelete }) {
       </button>
       {onDelete && (
         <button onClick={(e) => onDelete(e, folder)} aria-label={`Delete ${folder.folderName || folder.name}`}
-          className="absolute right-2 top-2 rounded-lg p-1.5 text-slate-600 opacity-0 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100">
+          className="absolute right-2 top-2 rounded-lg p-1.5 text-slate-600 transition-colors duration-150 hover:bg-red-500/10 hover:text-red-400 md:opacity-0 md:group-hover:opacity-100">
           <TrashIcon className="h-3.5 w-3.5" />
         </button>
       )}
