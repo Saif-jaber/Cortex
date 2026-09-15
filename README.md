@@ -210,9 +210,7 @@ npm run dev
 - [x] AI-generated chat titles
 - [x] Accurate storage usage on profile page
 - [x] Bring-your-own AI: multi-provider connections with live key verification and encryption at rest
-- [ ] AI reading for legacy `.doc` / `.ppt` files
-- [ ] File re-indexing when documents change
-- [ ] Export chat answers and saved conversations
+
 
 ## Contact
 
