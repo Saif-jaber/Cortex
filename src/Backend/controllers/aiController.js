@@ -22,8 +22,13 @@ export function getUserAiConfig(userDoc) {
   if (process.env.FREE_AI_ENABLED === "true") {
     const provider = process.env.FREE_AI_PROVIDER || "custom";
     const apiKey = process.env.FREE_AI_KEY || "";
-    const baseUrl = process.env.FREE_AI_BASE_URL || "";
-    const model = process.env.FREE_AI_MODEL || "";
+    let baseUrl = process.env.FREE_AI_BASE_URL || "";
+    let model = process.env.FREE_AI_MODEL || "";
+    if (provider === "cortex-free") {
+      provider = process.env.FREE_AI_PROVIDER || "custom";
+      baseUrl = process.env.FREE_AI_BASE_URL || "";
+      model = process.env.FREE_AI_MODEL || "";
+    }
     const cfg = normalizeConfig({ provider, apiKey, baseUrl, model });
     if (cfg && cfg.baseUrl && cfg.model) {
       return { ...cfg, apiKey, source: "system" };
@@ -56,8 +61,8 @@ function publicConfig(userDoc) {
       return {
         configured: true,
         source: "system",
-        provider,
-        label: def?.label || "Free Model",
+        provider: "cortex-free",
+        label: "Cortex Free",
         model,
         baseUrl: process.env.FREE_AI_BASE_URL || "",
         apiKeyHint: null,
@@ -94,7 +99,24 @@ export async function getAiConfig(req, res) {
 
 export async function saveAiConfig(req, res) {
   try {
-    const { provider, apiKey = "", baseUrl = "", model = "" } = req.body || {};
+    let { provider, apiKey = "", baseUrl = "", model = "" } = req.body || {};
+
+    if (provider === "cortex-free") {
+      if (process.env.FREE_AI_ENABLED !== "true" || !process.env.FREE_AI_MODEL) {
+        return res.status(400).json({ error: "Free model is not configured on this server." });
+      }
+      req.user.ai = {
+        provider: "cortex-free",
+        apiKeyEnc: "",
+        apiKeyHint: "",
+        baseUrl: process.env.FREE_AI_BASE_URL || "",
+        model: process.env.FREE_AI_MODEL || "",
+        verifiedAt: new Date(),
+      };
+      await req.user.save();
+      return res.json(publicConfig(req.user));
+    }
+
     const def = PROVIDER_LIST.find((p) => p.id === provider);
     if (!def) return res.status(400).json({ error: "Unknown AI provider" });
 

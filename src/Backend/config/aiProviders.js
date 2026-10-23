@@ -85,7 +85,7 @@ export const PROVIDERS = {
   },
 };
 
-export const PROVIDER_LIST = Object.entries(PROVIDERS).map(([id, def]) => ({
+const BASE_PROVIDER_LIST = Object.entries(PROVIDERS).map(([id, def]) => ({
   id,
   label: def.label,
   kind: def.kind,
@@ -97,6 +97,25 @@ export const PROVIDER_LIST = Object.entries(PROVIDERS).map(([id, def]) => ({
   suggestedModels: def.suggestedModels || [],
   keyUrl: def.keyUrl || null,
 }));
+
+export const PROVIDER_LIST = (() => {
+  const list = [...BASE_PROVIDER_LIST];
+  if (process.env.FREE_AI_ENABLED === "true" && process.env.FREE_AI_MODEL) {
+    list.unshift({
+      id: "cortex-free",
+      label: "Cortex Free",
+      kind: "free",
+      adapter: "openai",
+      description: "Use the shared free model (no API key required)",
+      requiresKey: false,
+      defaultBaseUrl: process.env.FREE_AI_BASE_URL || "",
+      defaultModel: process.env.FREE_AI_MODEL || "",
+      suggestedModels: [process.env.FREE_AI_MODEL],
+      keyUrl: null,
+    });
+  }
+  return list;
+})();
 
 // Builds the runtime config used by every adapter call. Fills in defaults,
 // trims stray slashes and normalizes local/custom URLs to the /v1 root that

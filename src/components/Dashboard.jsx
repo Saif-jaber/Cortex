@@ -976,6 +976,7 @@ function FileTypeSVG({ type, className }) {
 }
 
 const PROVIDER_MONOGRAM = {
+  "cortex-free": { text: "CF", cls: "bg-gold-400/15 text-gold-300 ring-gold-400/20" },
   openai: { text: "AI", cls: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20" },
   anthropic: { text: "Cl", cls: "bg-orange-500/15 text-orange-300 ring-orange-400/20" },
   google: { text: "G", cls: "bg-blue-500/15 text-blue-300 ring-blue-400/20" },
@@ -1078,8 +1079,9 @@ function AiSettingsModal({ onClose, onSaved }) {
     }
   }
 
+  const freeProviders = providers.filter((p) => p.kind === "free");
   const cloudProviders = providers.filter((p) => p.kind === "cloud");
-  const localProviders = providers.filter((p) => p.kind !== "cloud");
+  const localProviders = providers.filter((p) => p.kind !== "cloud" && p.kind !== "free");
 
   return (
     <>
@@ -1110,7 +1112,7 @@ function AiSettingsModal({ onClose, onSaved }) {
                 </span>
                 <div className="min-w-0">
                   <p className="truncate text-[13px] font-medium text-slate-100">
-                    {current.isFree ? "Free Model" : current.label} {current.source === "system" ? "active" : "connected"}
+                    {current.isFree || current.source === "system" ? "Cortex Free" : current.label} {current.source === "system" ? "active" : "connected"}
                   </p>
                   <p className="mt-0.5 truncate text-[11px] text-slate-500">
                     {current.model}
@@ -1124,6 +1126,17 @@ function AiSettingsModal({ onClose, onSaved }) {
                   {disconnecting ? "Removing..." : "Disconnect"}
                 </button>
               )}
+            </div>
+          )}
+
+          {freeProviders.length > 0 && (
+            <div>
+              <p className="mb-2 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Free</p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {freeProviders.map((p) => (
+                  <ProviderCard key={p.id} provider={p} active={selected === p.id} onSelect={() => applyProvider(p)} />
+                ))}
+              </div>
             </div>
           )}
 
@@ -1145,20 +1158,23 @@ function AiSettingsModal({ onClose, onSaved }) {
             </div>
           </div>
 
-          {def && (
-            <div className="space-y-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-slate-200">{def.label}</p>
-                {def.keyUrl && (
-                  <a href={def.keyUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[11px] font-medium text-gold-400 transition-colors hover:text-gold-300">
-                    Get an API key <ArrowUpRightIcon className="h-3 w-3" />
-                  </a>
-                )}
-                {selected === "ollama" && (
-                  <span className="text-[11px] text-slate-500">No key needed, just run Ollama</span>
-                )}
-              </div>
+              {def && (
+                <div className="space-y-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-200">{def.label}</p>
+                    {def.keyUrl && (
+                      <a href={def.keyUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-[11px] font-medium text-gold-400 transition-colors hover:text-gold-300">
+                        Get an API key <ArrowUpRightIcon className="h-3 w-3" />
+                      </a>
+                    )}
+                    {selected === "ollama" && (
+                      <span className="text-[11px] text-slate-500">No key needed, just run Ollama</span>
+                    )}
+                    {selected === "cortex-free" && (
+                      <span className="text-[11px] text-slate-500">Shared free model • No key required</span>
+                    )}
+                  </div>
 
               {needsUrl && (
                 <FormField label="Server URL">
@@ -1238,22 +1254,39 @@ function AiSettingsModal({ onClose, onSaved }) {
         <div className="flex flex-col-reverse gap-2 border-t border-white/[0.06] px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:flex-row sm:justify-end sm:px-5 sm:pb-4">
           <button onClick={onClose} disabled={saving}
             className="w-full rounded-lg px-4 py-2.5 text-xs font-medium text-slate-400 transition-all duration-150 hover:bg-white/[0.06] hover:text-slate-200 disabled:opacity-50 sm:w-auto sm:py-2">Cancel</button>
-          <button onClick={handleSave} disabled={!canSubmit}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold-400 px-4 py-2.5 text-xs font-medium text-[#17171a] transition-all duration-150 hover:bg-gold-300 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:py-2">
-            {saving ? (
-              <>
-                <SpinnerIcon className="h-3.5 w-3.5" /> Verifying...
-              </>
-            ) : savedOk ? (
-              <>
-                <CheckIcon className="h-3.5 w-3.5" /> Connected
-              </>
-            ) : isEditingCurrent ? (
-              "Update Connection"
-            ) : (
-              "Verify & Save"
-            )}
-          </button>
+          {selected === "cortex-free" ? (
+            <button onClick={handleSave} disabled={saving}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold-400 px-4 py-2.5 text-xs font-medium text-[#17171a] transition-all duration-150 hover:bg-gold-300 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:py-2">
+              {saving ? (
+                <>
+                  <SpinnerIcon className="h-3.5 w-3.5" /> Activating...
+                </>
+              ) : savedOk ? (
+                <>
+                  <CheckIcon className="h-3.5 w-3.5" /> Activated
+                </>
+              ) : (
+                "Use Free Model"
+              )}
+            </button>
+          ) : (
+            <button onClick={handleSave} disabled={!canSubmit}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold-400 px-4 py-2.5 text-xs font-medium text-[#17171a] transition-all duration-150 hover:bg-gold-300 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:py-2">
+              {saving ? (
+                <>
+                  <SpinnerIcon className="h-3.5 w-3.5" /> Verifying...
+                </>
+              ) : savedOk ? (
+                <>
+                  <CheckIcon className="h-3.5 w-3.5" /> Connected
+                </>
+              ) : isEditingCurrent ? (
+                "Update Connection"
+              ) : (
+                "Verify & Save"
+              )}
+            </button>
+          )}
         </div>
       </div>
     </>
