@@ -1872,7 +1872,26 @@ function WelcomeState({ onPick }) {
 
 function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId, setActiveChatId, setChatSessions, aiConnected, onOpenSettings }) {
   const [isTyping, setIsTyping] = useState(false);
+  const [showScrollDown, setShowScrollDown] = useState(false);
   const scrollRef = useRef(null);
+
+  const scrollToBottom = (smooth = true) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+      setShowScrollDown(!nearBottom && el.scrollHeight > el.clientHeight);
+    };
+    handleScroll();
+    el.addEventListener("scroll", handleScroll);
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [messages]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -1963,7 +1982,7 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId
   const isFresh = messages.length === 0;
 
   return (
-    <div className="flex flex-1 flex-col min-h-0 pb-[calc(env(safe-area-inset-bottom)+3.5rem)] md:pb-0">
+    <div className="relative flex flex-1 flex-col min-h-0 pb-[calc(env(safe-area-inset-bottom)+3.5rem)] md:pb-0">
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain [scroll-behavior:auto]">
         <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6">
           {isFresh ? (
@@ -1978,6 +1997,17 @@ function ChatPage({ messages, setMessages, chatInput, setChatInput, activeChatId
           {isTyping && !messages.some((m) => m.streaming) && <TypingIndicator />}
         </div>
       </div>
+      {showScrollDown && !isFresh && (
+        <button
+          onClick={() => scrollToBottom(true)}
+          aria-label="Scroll to latest message"
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#202024]/90 text-slate-300 shadow-lg shadow-black/30 backdrop-blur transition-all duration-150 hover:bg-[#26262b] hover:text-slate-100 md:bottom-28"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+      )}
 
       <div className="border-t border-white/[0.06] px-4 py-4 sm:px-6">
         <div className="mx-auto max-w-3xl">
