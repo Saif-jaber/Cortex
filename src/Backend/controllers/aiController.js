@@ -2,43 +2,81 @@ import { PROVIDER_LIST, normalizeConfig, verifyProviderConnection } from "../con
 import { encryptSecret, decryptSecret, maskSecret } from "../utils/crypto.js";
 
 // Rebuilds a runtime provider config from the user's saved (encrypted) one.
-// Returns null when the user has no verified connection, so chat stays locked
-// until they connect a real key or local model.
+// Falls back to a server-side free model if configured via environment variables.
 export function getUserAiConfig(userDoc) {
   const ai = userDoc?.ai;
-  if (!ai || !ai.provider || !ai.verifiedAt) return null;
-  const apiKey = decryptSecret(ai.apiKeyEnc) || "";
-  const cfg = normalizeConfig({
-    provider: ai.provider,
-    apiKey,
-    baseUrl: ai.baseUrl || "",
-    model: ai.model || "",
-  });
-  if (!cfg || !cfg.baseUrl || !cfg.model) return null;
-  return cfg;
+  if (ai?.provider && ai?.verifiedAt) {
+    const apiKey = decryptSecret(ai.apiKeyEnc) || "";
+    const cfg = normalizeConfig({
+      provider: ai.provider,
+      apiKey,
+      baseUrl: ai.baseUrl || "",
+      model: ai.model || "",
+    });
+    if (cfg && cfg.baseUrl && cfg.model) {
+      return { ...cfg, source: "user" };
+    }
+  }
+
+  // Server-side free/default model fallback (never exposed to client)
+  if (process.env.FREE_AI_ENABLED === "true") {
+    const provider = process.env.FREE_AI_PROVIDER || "custom";
+    const apiKey = process.env.FREE_AI_KEY || "";
+    const baseUrl = process.env.FREE_AI_BASE_URL || "";
+    const model = process.env.FREE_AI_MODEL || "";
+    const cfg = normalizeConfig({ provider, apiKey, baseUrl, model });
+    if (cfg && cfg.baseUrl && cfg.model) {
+      return { ...cfg, apiKey, source: "system" };
+    }
+  }
+
+  return null;
 }
 
 function publicConfig(userDoc) {
   const ai = userDoc?.ai;
-  if (!ai || !ai.provider || !ai.verifiedAt) {
+  if (ai?.provider && ai?.verifiedAt) {
     return {
-      configured: false,
-      provider: null,
-      label: null,
-      model: null,
-      baseUrl: null,
-      apiKeyHint: null,
-      verifiedAt: null,
+      configured: true,
+      source: "user",
+      provider: ai.provider,
+      label: PROVIDER_LIST.find((p) => p.id === ai.provider)?.label || ai.provider,
+      model: ai.model || "",
+      baseUrl: ai.baseUrl || "",
+      apiKeyHint: ai.apiKeyHint || "",
+      verifiedAt: ai.verifiedAt,
     };
   }
+
+  if (process.env.FREE_AI_ENABLED === "true") {
+    const provider = process.env.FREE_AI_PROVIDER || "custom";
+    const model = process.env.FREE_AI_MODEL || "";
+    if (model) {
+      const def = PROVIDER_LIST.find((p) => p.id === provider);
+      return {
+        configured: true,
+        source: "system",
+        provider,
+        label: def?.label || "Free Model",
+        model,
+        baseUrl: process.env.FREE_AI_BASE_URL || "",
+        apiKeyHint: null,
+        verifiedAt: null,
+        isFree: true,
+      };
+    }
+  }
+
   return {
-    configured: true,
-    provider: ai.provider,
-    label: PROVIDER_LIST.find((p) => p.id === ai.provider)?.label || ai.provider,
-    model: ai.model || "",
-    baseUrl: ai.baseUrl || "",
-    apiKeyHint: ai.apiKeyHint || "",
-    verifiedAt: ai.verifiedAt,
+    configured: false,
+    source: null,
+    provider: null,
+    label: null,
+    model: null,
+    baseUrl: null,
+    apiKeyHint: null,
+    verifiedAt: null,
+    isFree: false,
   };
 }
 

@@ -155,7 +155,7 @@ export async function chat(req, res) {
     return res.status(400).json({ error: "question is required" });
   }
 
-  // Chat only works with a verified provider: an API key or a local model URL.
+  // Chat works with a verified user connection or a server-side free model.
   const aiConfig = getUserAiConfig(req.user);
   if (!aiConfig) {
     return res.status(403).json({

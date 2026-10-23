@@ -1109,17 +1109,21 @@ function AiSettingsModal({ onClose, onSaved }) {
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-medium text-slate-100">{current.label} connected</p>
+                  <p className="truncate text-[13px] font-medium text-slate-100">
+                    {current.isFree ? "Free Model" : current.label} {current.source === "system" ? "active" : "connected"}
+                  </p>
                   <p className="mt-0.5 truncate text-[11px] text-slate-500">
                     {current.model}
-                    {current.apiKeyHint ? ` · ${current.apiKeyHint}` : ""}
+                    {current.apiKeyHint ? ` • ${current.apiKeyHint}` : current.source === "system" ? " • Server default" : ""}
                   </p>
                 </div>
               </div>
-              <button onClick={handleDisconnect} disabled={disconnecting}
-                className="shrink-0 rounded-lg bg-white/[0.05] px-2.5 py-1.5 text-[11px] font-medium text-red-300 transition-colors duration-150 hover:bg-red-500/10 disabled:opacity-50">
-                {disconnecting ? "Removing..." : "Disconnect"}
-              </button>
+              {current.source === "user" && (
+                <button onClick={handleDisconnect} disabled={disconnecting}
+                  className="shrink-0 rounded-lg bg-white/[0.05] px-2.5 py-1.5 text-[11px] font-medium text-red-300 transition-colors duration-150 hover:bg-red-500/10 disabled:opacity-50">
+                  {disconnecting ? "Removing..." : "Disconnect"}
+                </button>
+              )}
             </div>
           )}
 
